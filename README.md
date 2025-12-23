@@ -8,14 +8,12 @@ An intuitive, type-safe Python wrapper for the [Xeno-Canto API](https://xeno-can
 Streamline your bioacoustics and machine learning workflows by searching, filtering, and processing wildlife recordings with full validation and IDE autocompletion.  
 
 ## Project Sponsors
-<image
-  src='.github/2c74eb53-2b70-4efa-801a-121ec1ebfcab.jpg'
-  height=200,
-/>
-<image
-  src='.github/tel-hai-logo.png'
-  height=200,
-/>
+<table>
+  <tr>
+    <td><img src=".github/2c74eb53-2b70-4efa-801a-121ec1ebfcab.jpg" alt="asp-lab-logo"></td>
+    <td><img src=".github/tel-hai-logo.png" alt="tel-hai-logo"></td>
+  </tr>
+</table>
 
 ## Disclaimer
 This project is a free and open-source tool intended for educational purposes only;  
