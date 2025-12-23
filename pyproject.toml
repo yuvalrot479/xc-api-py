@@ -14,8 +14,8 @@ description = "An intuitive, type-safe Python wrapper for the Xeno-Canto API"
 license = {text = "MIT"}
 name = "xc-api-py"
 readme = "README.md"
-requires-python = "==3.14.*"
-version = "0.1.4"
+requires-python = ">=3.11"
+version = "0.1.5"
 
 [tool.pdm]
 distribution = true
@@ -29,3 +29,8 @@ dev = [
   "pandas>=2.3.3",
   "sounddevice>=0.5.3",
 ]
+
+[project.urls]
+"Bug Reports" = "https://github.com/yuvalrot479/xc-api-py/issues"
+Homepage = "https://github.com/yuvalrot479/xc-api-py"
+Source = "https://github.com/yuvalrot479/xc-api-py"
