@@ -95,9 +95,6 @@ class Client:
       """
       Search for recordings matching a specific query.
 
-      Returns a one-time consumed generator. Results are fetched lazily. 
-      If multiple pages are required, retrieval is optimized via threading.
-
       :param query: A SearchQuery object containing the filters to apply.
       :type query: SearchQuery
       :param limit: The maximum number of recordings to return. If None, returns all matches.

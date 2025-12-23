@@ -5,5 +5,5 @@ __pycache__/
 .ruff_cache/
 .pdm-python
 .venv
-*.env*
-xc_api_demo.py
+/*.env*
+/*.py

@@ -1,13 +1,7 @@
-from .v3.schemas.recording import Recording
+from .schemas.recording import Recording
 from pathlib import Path
-from typing import (
-  Optional,
-  Union,
-)
-from urllib.request import (
-  HTTPError,
-  urlopen,
-)
+from typing import Optional
+from urllib.request import HTTPError, urlopen
 import warnings
 import miniaudio
 import numpy as np
@@ -15,7 +9,6 @@ from datetime import timedelta
 from yarl import URL
 from functools import partial
 from contextlib import contextmanager
-from dataclasses import dataclass
 
 def _fetch(url: URL) -> bytes:
     try:
