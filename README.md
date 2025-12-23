@@ -10,8 +10,8 @@ Streamline your bioacoustics and machine learning workflows by searching, filter
 ## Project Sponsors
 <table>
   <tr>
-    <td><img src=".github/2c74eb53-2b70-4efa-801a-121ec1ebfcab.jpg" alt="asp-lab-logo"></td>
-    <td><img src=".github/tel-hai-logo.png" alt="tel-hai-logo"></td>
+    <td><img src="https://raw.githubusercontent.com/yuvalrot479/xc-api-py/main/.github/asp-lab-logo.jpg" alt="asp-lab-logo"></td>
+    <td><img src="https://raw.githubusercontent.com/yuvalrot479/xc-api-py/main/.github/tel-hai-logo.png" alt="tel-hai-logo"></td>
   </tr>
 </table>
 
