@@ -96,6 +96,7 @@ class LeanRecording(BaseModel):
     default=None,
   )
 
+
 class Sonograms(BaseModel):
   model_config = ConfigDict(
     arbitrary_types_allowed=True,

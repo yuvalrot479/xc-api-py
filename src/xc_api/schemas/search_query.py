@@ -167,23 +167,6 @@ class SearchQuery(BaseModel):
     default=None,
   )
   
-  @field_validator(
-    'recording_id'
-  )
-  def _validate_recording_id(cls, v: Union[RecordingId, str, int]):
-    
-    if isinstance(v, RecordingId):
-      return f'{v.a}-{v.b}'
-
-    else:
-      s = str(v).strip()
-      PATTERN = r'^(?i:xc)?(?P<recording_id>\d{1,9})$'
-      match = re.match(PATTERN, s)
-      if not match:
-        raise ValueError(v)
-      
-      return RecordingId(int(match.group('recording_id')))
-  
   @field_serializer(
     'animal_genus',
     'animal_epithet',
