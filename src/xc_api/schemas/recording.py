@@ -17,14 +17,15 @@ import yarl
 
 from .field_validators import *
 
-Float = Annotated[float, BeforeValidator(validate_float)]
-Date = Annotated[date, BeforeValidator(validate_date)]
-Time = Annotated[time, BeforeValidator(validate_time)]
-URL = Annotated[yarl.URL, BeforeValidator(validate_url)]
-String = Annotated[str, BeforeValidator(validate_string)]
-Boolean = Annotated[bool, BeforeValidator(validate_boolean)]
-Timedelta = Annotated[timedelta, BeforeValidator(validate_timedelta)]
-XCUploadURL = Annotated[yarl.URL, BeforeValidator(validate_xc_file_upload_url)]
+Float = Annotated[Optional[float], BeforeValidator(validate_float)]
+Date = Annotated[Optional[date], BeforeValidator(validate_date)]
+Time = Annotated[Optional[time], BeforeValidator(validate_time)]
+URL = Annotated[Optional[yarl.URL], BeforeValidator(validate_url)]
+String = Annotated[Optional[str], BeforeValidator(validate_string)]
+Boolean = Annotated[Optional[bool], BeforeValidator(validate_boolean)]
+Timedelta = Annotated[Optional[timedelta], BeforeValidator(validate_timedelta)]
+XCUploadURL = Annotated[Optional[yarl.URL], BeforeValidator(validate_xc_file_upload_url)]
+XCQuality = Annotated[Optional[QualityRating], BeforeValidator(validate_xc_recording_quality)]
 
 class LeanRecording(BaseModel):
   model_config = ConfigDict(
@@ -42,7 +43,7 @@ class LeanRecording(BaseModel):
     description='Specific name (epithet) of the species',
     examples=['troglodytes'],
   )
-  animal_subspecies: Optional[str] = Field(
+  animal_subspecies: String = Field(
     alias='ssp',
     description='Subspecies epithet.',
     default=None,
@@ -54,9 +55,10 @@ class LeanRecording(BaseModel):
     description='Catalogue number (6-7 digit) of the recording on Xeno-Canto.',
     examples=['694038'],
   )
-  recording_file_url: URL = Field(
+  recording_file_url: Optional[URL] = Field(
     alias='file',
     description='Direct download URL for the audio file.',
+    default=None,
   )
   recording_license_url: URL = Field(
     alias='lic',
@@ -67,26 +69,32 @@ class LeanRecording(BaseModel):
     description='Original filename of the audio file.',
     examples=['XC694038-211223_02Carrizo variaci\u00f3ns dunha frase bastante stereotipada siteD 9.30 Sisalde.mp3'],
   )
-  recording_latitude: Float = Field(
+  recording_latitude: Optional[Float] = Field(
     alias='lat',
     description='Latitude of the recording in decimal coordinates',
-    # default=None,
+    default=None,
   )
-  recording_longitude: Float = Field(
+  recording_longitude: Optional[Float] = Field(
     alias='lon',
     description='Longitude of the recording in decimal coordinates',
-    # default=None,
+    default=None,
   )
-  recording_quality: RecordingQuality = Field(
+  recording_quality: Optional[XCQuality] = Field(
     alias='q',
-    description='Quality rating of the recording.',
+    description='''
+    Recordings are rated by quality.
+    Quality ratings range from A (highest quality) to E (lowest quality).
+    To search for recordings that match a certain quality rating, use the q tag.
+    This field also accepts '<' and '>' operators. For example:
+
+    q:A will return recordings with a quality rating of A.
+    q:"<C" will return recordings with a quality rating of D or E.
+    q:">C" will return recordings with a quality rating of B or A.
+    
+    Note that not all recordings are rated. Unrated recordings will not be returned for a search on quality rating.
+    ''',
+    default=None,
   )
-  @field_validator('recording_quality', mode='before')
-  def validate_recording_quality(cls, v):
-    try:
-      return RecordingQuality[v.capitalize()]
-    except:
-      return None
 
 class Sonograms(BaseModel):
   model_config = ConfigDict(

@@ -2,7 +2,7 @@ from typing import Literal, TypeAlias
 from enum import IntEnum
 from datetime import date, time, timedelta
 
-class RecordingQuality(IntEnum):
+class QualityRating(IntEnum):
   A = 1 # Best
   B = 2
   C = 3
@@ -20,6 +20,7 @@ QualityConstraint: TypeAlias = Literal[
   'exactly',
   'at least',
   'at most',
+  'between',
 ]
 
 RecordingArea: TypeAlias = Literal[

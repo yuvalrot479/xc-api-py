@@ -2,30 +2,36 @@ from datetime import datetime, date, time, timedelta
 import re
 import yarl
 from functools import wraps
-from typing import Optional
+from typing import Optional, Union
+from ..types import QualityRating
 
-INVALID_STRING_INPUTS = ['', '?', 'unknown']
+INVALID_STRING_INPUTS = ['', '?', 'unknown', 'no score']
 
-
-def handle_invalid_input(func):
+def catch_invalid_input(func):
   @wraps(func)
-  def wrapper(s: str, *args, **kwargs):
-    if not isinstance(s, str) or s.lower() in INVALID_STRING_INPUTS:
+  def wrapper(v: Union[str, None], *args, **kwargs):
+    if any([
+      v is None,
+      (isinstance(v, str) and v.lower() in INVALID_STRING_INPUTS),
+      
+    ]):
       return None
-    return func(s, *args, **kwargs)
+    
+    return func(v, *args, **kwargs)
+  
   return wrapper
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_url(s: str) -> yarl.URL:
   if not s.startswith('https:'):
     s = f'https:{s}'
   return yarl.URL(s)
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_float(s: str) -> float:
   return float(s)
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_date(s: str) -> Optional[date]:
   try:
     return datetime.fromisoformat(s)
@@ -33,11 +39,11 @@ def validate_date(s: str) -> Optional[date]:
   except:
     return None
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_string(s: str) -> str:
   return s
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_time(s: str) -> time:
   try:
     # 1. Try standard ISO format first (fastest)
@@ -53,12 +59,12 @@ def validate_time(s: str) -> time:
     # elif len(s.split(':')) == 3:
     return datetime.strptime(s, "%H:%M:%S").time()
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_timedelta(s: str) -> timedelta:
   t = datetime.strptime(s, '%M:%S')
   return timedelta(minutes=t.minute, seconds=t.second)
 
-@handle_invalid_input
+@catch_invalid_input
 def validate_boolean(s: str) -> bool:
   if s.lower().startswith('yes'):
     return True
@@ -92,3 +98,10 @@ def validate_xc_file_upload_url(s: str) -> yarl.URL:
   metadata = match.groupdict() # TODO Something with this
   
   return yarl.URL(s)
+
+@catch_invalid_input
+def validate_xc_recording_quality(v: str) -> Optional[QualityRating]:
+  try:
+    return QualityRating[v.capitalize()]
+  except:
+    return None

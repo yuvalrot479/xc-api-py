@@ -354,7 +354,7 @@ class SearchQuery(BaseModel):
     ''',
     default=None,
   )
-  recording_quality: Optional[Quality] = Field(
+  recording_quality: Optional[RecordingQuality] = Field(
     serialization_alias='q',
     title='Recording quality',
     description="Recordings are rated by quality.\
@@ -511,8 +511,8 @@ class SearchQuery(BaseModel):
 
   
   @field_serializer('recording_quality')
-  def _serialize_recording_quality(self, tag: Quality):
-    q = tag.value.name
+  def _serialize_recording_quality(self, tag: RecordingQuality):
+    q = tag.a.name
 
     match tag.constraint:
       case None:
@@ -524,7 +524,7 @@ class SearchQuery(BaseModel):
         elif q == 'E':
           return None
         else:
-          return f'">{RecordingQuality(tag.value + 1).name}"'
+          return f'">{QualityRating(tag.a + 1).name}"'
       
       case 'at most':
         if q == 'A':
@@ -532,7 +532,7 @@ class SearchQuery(BaseModel):
         elif q == 'E':
           return 'E'
         else:
-          return f'"<{RecordingQuality(tag.value - 1).name}"'
+          return f'"<{QualityRating(tag.a - 1).name}"'
       
       case _:
         raise ValueError(tag.constraint)

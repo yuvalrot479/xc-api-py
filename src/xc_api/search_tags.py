@@ -74,35 +74,49 @@ class Temp(_NumericRangeTag): ...
 
 class SampleRate(_NumericTag): ...
 
-class Longitude(_NumericTag): ...
-
 class Latitude(_NumericTag): ...
 
-class Quality(_SearchTag):  
-  def __init__(
-    self,
-    value: str,
-    contraint: Optional[QualityConstraint] = None,
-  ):
+class Longitude(_NumericTag): ...
+
+class RecordingQuality(_NumericRangeTag):
+  def assign(self, f: str, v: Union[str, int]):
     try:
-      self.value = RecordingQuality[value.capitalize()]
+      if isinstance(v, str):
+        self.a = QualityRating[v.capitalize()]
+      else:
+        self.a = QualityRating(v)
+      setattr(self, f, v)
     
-    except:
-      values = ', '.join([f'"{r.name}"' for r in RecordingQuality])
+    except ValueError:
+      values = ', '.join([f'"{r.name}"' for r in QualityRating])
       raise ValueError((
-        f'Invalid quality "{value}";',
+        f'Invalid quality "{v}";',
         'Pass one of the following (case-insensitive): ',
         values,
       ))
-    self.constraint = contraint
+  
+  def __init__(
+    self,
+    a: Union[str, int],
+    b: Optional[Union[str, int]],
+    constraint: Optional[QualityConstraint] = None,
+  ):
+    self.assign('a', a)
+    if b is not None:
+      self.assign('b', b)
+    self.constraint = constraint
 
   @classmethod
-  def at_least(cls, value: str):
-    return cls(value, 'at least') # f'">{value}"'
+  def between(cls, a: Union[str, int], b: Union[str, int]):
+    raise NotImplementedError() # TODO
 
   @classmethod
-  def at_most(cls, value: str):
-    return cls(value, 'at most') # f'"<{value}"'
+  def at_least(cls, v: Union[str, int]):
+    return cls(v, 'at least') # f'">{value}"'
+
+  @classmethod
+  def at_most(cls, v: Union[str, int]):
+    return cls(v, 'at most') # f'"<{value}"'
 
 class Country(_SearchTag):
   def __init__(self, country_identifier: str):
