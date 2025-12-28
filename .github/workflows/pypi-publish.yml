@@ -1,9 +1,11 @@
 name: PDM Publish
 
 on:
-  release:
-    types: [published] # This triggers when you click "Publish Release" on GitHub
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
+
 jobs:
   pypi-publish:
     name: Upload release to PyPI
