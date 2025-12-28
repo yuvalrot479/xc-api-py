@@ -56,35 +56,36 @@ class Client:
 
     params_string = '&'.join(f'{k}={v}' for k, v in params.items())
     
-    try:
-      url = f'{self._BASE_URL}/recordings?{params_string}'
-      resp = self._session.get(url)
-      body = resp.json()
-      
-      if resp.status_code == 401:
+    url = f'{self._BASE_URL}/recordings?{params_string}'
+    resp = self._session.get(url)
+    
+    match resp.status_code:
+      case 401:
+        body = resp.json()
         msg = body.get(
           'message',
           "Missing or invalid 'key' parameter. Visit https://xeno-canto.org/account to retrieve your API key.",
         )
         raise ClientError(msg) from None
-      
-      elif resp.status_code == 400:
-        print(resp.url)
+ 
+      case 400:
+        body = resp.json()
         msg = body.get(
           'message',
           "Xeno-canto API v3 only accepts queries using tags. Visit https://xeno-canto.org/explore/api for a complete list."
         )
-        raise ClientError(msg) from None
+        raise ClientError(f'{msg} ({resp.url})') from None
 
-      resp.raise_for_status()
-      
-      if lean:
-        return SearchResponse[LeanRecording].model_validate(body)
-      else:
-        return SearchResponse[Recording].model_validate(body)
+      case 503:
+        raise ServerError(f'Server returned 503, you are probably hit the rate-limit') from None
     
-    except requests.RequestException as err:
-      raise ServerError(err)
+    resp.raise_for_status()
+    
+    if lean:
+      return SearchResponse[LeanRecording].model_validate_json(resp.text)
+    
+    else:
+      return SearchResponse[Recording].model_validate_json(resp.text)
   
   def find(self, query: SearchQuery, limit: Optional[int] = None, lean: bool = False) -> Union[Iterator[Recording], Iterator[LeanRecording]]:
       """
