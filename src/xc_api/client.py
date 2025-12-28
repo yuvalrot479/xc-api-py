@@ -77,7 +77,9 @@ class Client:
         raise ClientError(f'{msg} ({resp.url})') from None
 
       case 503:
-        raise ServerError(f'Server returned 503, you are probably hit the rate-limit') from None
+        raise ServerError(
+          f'Server responded with 503, you probably hit the rate-limit: https://xeno-canto.org/explore/api'
+        ) from None
     
     resp.raise_for_status()
     
