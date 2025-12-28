@@ -21,5 +21,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Publish package
-        run: pdm publish
+      # 1. Build the artifacts first
+      - name: Build package
+        run: pdm build
+
+      # 2. Use the official PyPI action (handles the id-token/OIDC automatically)
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: false
