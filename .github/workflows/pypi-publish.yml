@@ -22,8 +22,12 @@ jobs:
           python-version: '3.11'
 
       - name: Build and Publish package
-        # 'pdm publish' handles the build automatically if dist/ is empty
         run: pdm publish
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
