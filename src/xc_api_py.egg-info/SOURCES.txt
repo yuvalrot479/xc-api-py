@@ -5,6 +5,8 @@ src/xc_api/client.py
 src/xc_api/recording_audio.py
 src/xc_api/search_tags.py
 src/xc_api/types.py
+src/xc_api/utils.py
+src/xc_api/schemas/field_validators.py
 src/xc_api/schemas/recording.py
 src/xc_api/schemas/search_query.py
 src/xc_api/schemas/search_response.py
@@ -13,3 +15,5 @@ src/xc_api_py.egg-info/SOURCES.txt
 src/xc_api_py.egg-info/dependency_links.txt
 src/xc_api_py.egg-info/requires.txt
 src/xc_api_py.egg-info/top_level.txt
+tests/test.py
+tests/test_client.py

@@ -9,13 +9,14 @@ dependencies = [
   "miniaudio>=1.61",
   "numpy>=2.3.5",
   "requests>=2.32.5",
+  "requests-cache>=1.2.1",
 ]
 description = "An intuitive, type-safe Python wrapper for the Xeno-Canto API"
 license = {text = "MIT"}
 name = "xc-api-py"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.1.13"
+version = "0.1.14"
 
 [tool.pdm]
 distribution = true

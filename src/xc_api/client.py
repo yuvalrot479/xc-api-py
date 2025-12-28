@@ -13,6 +13,7 @@ from typing import (
 import warnings
 from random import randint
 import requests
+import requests_cache
 import re
 
 class ClientError(RuntimeError): ...
@@ -29,9 +30,16 @@ class Client:
   _PER_PAGE_MAX = 500
   _MAX_WORKERS = 1
 
-  def __init__(self, api_key: str):
-    self._session = requests.Session()
+  def __init__(self, api_key: str, cache_age: Optional[timedelta] = None):
     self._api_key = api_key
+    if cache_age:
+      self._session = requests_cache.CachedSession(
+        'xc_api_client',
+        expire_after=cache_age.total_seconds()
+      )
+    else:
+      self._session = requests.Session()
+
 
   def _fetch_by_page(self, query: SearchQuery, per_page: int, page: int, lean: bool = False) -> SearchResponse:
     if per_page < self._PER_PAGE_MIN or per_page > self._PER_PAGE_MAX:
