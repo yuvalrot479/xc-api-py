@@ -11,7 +11,7 @@ jobs:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -21,16 +21,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 1. Build the artifacts first
-      - name: Build package
-        run: pdm build
-
-      # 2. Use the official PyPI action (handles the id-token/OIDC automatically)
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Build and Publish package
+        # 'pdm publish' handles the build automatically if dist/ is empty
+        run: pdm publish
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          generate_release_notes: false
+          generate_release_notes: true
