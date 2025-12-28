@@ -31,45 +31,42 @@ class _SearchTag(ABC):
 class _NumericTag(_SearchTag):
   def __init__(
     self,
-    value: _NumericValue,
-    contraint: Optional[NumericConstraint] = None,
-    value_opt: Optional[float] = None,
+    a: _NumericValue,
+    b: Optional[_NumericValue] = None,
+    constraint: Optional[NumericConstraint] = None,
   ):
-    self.value = self._to_float(value)
-    self.constraint = contraint
-    self.value_opt = value_opt
-
-  @staticmethod
-  def _to_float(value: _NumericValue):
-    if isinstance(value, timedelta):
-      return value.total_seconds()
-    return float(value)
+    self.a = a
+    self.b = b
+    self.constraint = constraint
 
   @classmethod
-  def at_least(cls, value: _NumericValue):
-    return cls(value, 'at least') # f'">{value}"'
+  def at_least(cls, v: _NumericValue):
+    return cls(v, constraint='at least') # f'">{value}"'
 
   @classmethod
   def at_most(cls, value: _NumericValue):
-    return cls(value, 'at most') # f'"<{value}"'
+    return cls(value, constraint='at most') # f'"<{value}"'
 
   @classmethod
   def exactly(cls, value: _NumericValue):
-    return cls(value, 'exactly') # f'"={length}"'
+    return cls(value, constraint='exactly') # f'"={length}"'
 
 class _NumericRangeTag(_NumericTag):
   @classmethod
   def between(cls, a: _NumericValue, b: _NumericValue):
-    val_a = cls._to_float(a)
-    val_b = cls._to_float(b)
+    if not (a and b):
+      raise ValueError(f'Need two values')
     
-    if val_a == val_b:
-      raise ValueError(f"Range values must be different: {val_a}, {val_b}")
+    if not (type(a) is type(b)):
+      raise ValueError()
+
+    if a == b:
+      raise ValueError(f"Range values must be different: {a}, {b}")
     
-    if val_a > val_b:
-      val_a, val_b = val_b, val_a
+    if a > b: # type: ignore
+      a, b = b, a
         
-    return cls(val_a, 'between', val_b)
+    return cls(a, b, constraint='between')
 
 class Length(_NumericRangeTag): ...
 
@@ -91,11 +88,12 @@ class Quality(_SearchTag):
       self.value = RecordingQuality[value.capitalize()]
     
     except:
-      raise ValueError(
-        f'Invalid quality "{value}"; \
-          Pass one of the following (case-insensitive):\
-              {[f'"{rank.name}"' for rank in RecordingQuality ]}'
-      )
+      values = ', '.join([f'"{r.name}"' for r in RecordingQuality])
+      raise ValueError((
+        f'Invalid quality "{value}";',
+        'Pass one of the following (case-insensitive): ',
+        values,
+      ))
     self.constraint = contraint
 
   @classmethod
@@ -128,7 +126,19 @@ class Box(_SearchTag):
     self.lat_max = lat_max
     self.lon_max = lon_max
 
-# TODO Move to validator
-class since(_SearchTag):
+class RecordingId(_NumericRangeTag):
+  @classmethod
+  def at_least(cls, value: _NumericValue):
+    raise NotImplementedError()
+
+  @classmethod
+  def at_most(cls, value: _NumericValue):
+    raise NotImplementedError()
+
+  @classmethod
+  def exactly(cls, value: _NumericValue):
+    raise NotImplementedError()
+
+class Since(_SearchTag):
   def __init__(self, value: Union[int, timedelta, datetime]):
     self.value = value

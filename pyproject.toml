@@ -15,7 +15,7 @@ license = {text = "MIT"}
 name = "xc-api-py"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.1.5"
+version = "0.1.6"
 
 [tool.pdm]
 distribution = true
@@ -23,11 +23,12 @@ src-paths = ["src"]
 
 [dependency-groups]
 dev = [
-  "pytest>=9.0.1",
-  "python-dotenv>=1.2.1",
-  "rich>=14.2.0",
-  "pandas>=2.3.3",
-  "sounddevice>=0.5.3",
+    "pytest>=9.0.1",
+    "python-dotenv>=1.2.1",
+    "rich>=14.2.0",
+    "pandas>=2.3.3",
+    "sounddevice>=0.5.3",
+    "requests-mock>=1.12.1",
 ]
 
 [project.urls]

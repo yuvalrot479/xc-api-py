@@ -3,15 +3,14 @@ from pydantic import (
   Field,
 )
 from typing import (
-  Sequence,
+  Generic,
+  TypeVar,
+  List,
 )
-from .recording import Recording
 
-class SearchResponse(BaseModel):
-  # model_config = ConfigDict(
-  #   populate_by_name=True,
-  #   validate_by_alias=True,
-  # )
+T = TypeVar('T')
+
+class SearchResponse(BaseModel, Generic[T]):
   num_recordings: int = Field(
     alias='numRecordings',
     description='Total recordings fetched via the query',
@@ -28,6 +27,6 @@ class SearchResponse(BaseModel):
     alias='numPages',
     description='Total pages of recordings fetched via the query',
   )
-  recordings: Sequence[Recording] = Field(
+  recordings: List[T] = Field(
     description='List of recording objects on this page',
   )

@@ -1,5 +1,5 @@
 from .schemas.search_query import SearchQuery
-from .schemas.recording import Recording
+from .schemas.recording import Recording, LeanRecording
 from .schemas.search_response import SearchResponse
 from .search_tags import *
 from concurrent.futures import (
@@ -13,6 +13,7 @@ from typing import (
 import warnings
 from random import randint
 import requests
+import re
 
 class ClientError(RuntimeError): ...
 
@@ -32,19 +33,14 @@ class Client:
     self._session = requests.Session()
     self._api_key = api_key
 
-  def _fetch_by_page(
-    self,
-    search_query: SearchQuery,
-    per_page: int,
-    page: int,
-  ):
+  def _fetch_by_page(self, query: SearchQuery, per_page: int, page: int, lean: bool = False) -> SearchResponse:
     if per_page < self._PER_PAGE_MIN or per_page > self._PER_PAGE_MAX:
       raise ValueError(per_page)
     
     if page < 1:
       raise ValueError(page)
     
-    query_dict = search_query.model_dump(
+    query_dict = query.model_dump(
       by_alias=True,
       exclude_none=True,
     )
@@ -82,16 +78,15 @@ class Client:
 
       resp.raise_for_status()
       
-      return SearchResponse.model_validate(body)
+      if lean:
+        return SearchResponse[LeanRecording].model_validate(body)
+      else:
+        return SearchResponse[Recording].model_validate(body)
     
     except requests.RequestException as err:
       raise ServerError(err)
   
-  def find(
-    self,
-    query: SearchQuery,
-    limit: Optional[int] = None,
-  ) -> Iterator[Recording]:
+  def find(self, query: SearchQuery, limit: Optional[int] = None, lean: bool = False) -> Union[Iterator[Recording], Iterator[LeanRecording]]:
       """
       Search for recordings matching a specific query.
 
@@ -118,9 +113,10 @@ class Client:
       
       # Probing Request
       probe = self._fetch_by_page(
-        search_query=query,
+        query=query,
         per_page=per_page,
-        page=1
+        page=1,
+        lean=lean,
       )
       
       if not probe or not probe.recordings:
@@ -142,7 +138,7 @@ class Client:
       with ThreadPoolExecutor(max_workers=__class__._MAX_WORKERS) as executor:
         # Map page numbers to futures
         future_to_page = {
-          executor.submit(self._fetch_by_page, query, per_page, page): page 
+          executor.submit(self._fetch_by_page, query, per_page, page, lean): page 
           for page in remaining_pages
         }
 
@@ -160,18 +156,15 @@ class Client:
               executor.shutdown(wait=False, cancel_futures=True)
               return
 
-  def find_one(
-    self,
-    query: SearchQuery,
-  ):
+  def find_one(self, query: SearchQuery, lean: bool = False) -> Optional[Union[Recording, LeanRecording]]:
     try:
-      recordings = self.find(query, limit=1)
+      recordings = self.find(query, limit=1, lean=lean)
       return next(recordings)
     
     except StopIteration:
       return None
 
-  def get_by_id(self, recording_id: str) -> Optional[Recording]:
+  def get(self, recording_id: str | int, lean: bool = False) -> Optional[Recording | LeanRecording]:
     """
     Retrieve a specific recording by its catalog number.
 
@@ -180,11 +173,17 @@ class Client:
     :return: The matching Recording object, or None if no match is found.
     :rtype: Optional[Recording]
     """
-    query = SearchQuery(recording_id=recording_id)
-    result = self.find(query, limit=1)
+    if isinstance(recording_id, str):
+      match = re.search(r'(?i:xc)?(?P<id>\d+)', recording_id)
+      if not match:
+        raise ClientError('Invalid XC recording catalogue number format; See https://xeno-canto.org/explore/api')
+      recording_id = match.group('id')
+    
+    query = SearchQuery(recording_id=RecordingId(int(recording_id)))
+    recordings = self.find(query, limit=1, lean=lean)
     
     try:
-      return next(result)
+      return next(recordings)
 
     except StopIteration:
       warnings.warn(f'No recording found with id "{recording_id}"')
@@ -200,7 +199,7 @@ class Client:
       xc_id = str(randint(1, 900000))
       
       try:
-        sample.append(self.get_by_id(xc_id))
+        sample.append(self.get(xc_id))
       
       except StopIteration:
         continue

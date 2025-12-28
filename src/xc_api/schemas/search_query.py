@@ -18,13 +18,7 @@ import re
 from ..types import *
 from ..search_tags import *
 from .. import search_tags
-
-def _format_text(text: str):
-  s = text.strip()
-  if ' ' in s:
-    return f'"{s.replace(' ', '+')}"'
-  else:
-    return s
+from .. import utils
 
 class SearchQuery(BaseModel):
   # NOTE https://xeno-canto.org/help/search#advanced
@@ -72,7 +66,7 @@ class SearchQuery(BaseModel):
             it also accepts a 'matches' operator.",
     default=None,
   )
-  recording_id: Optional[str] = Field(
+  recording_id: Optional[RecordingId] = Field(
     serialization_alias='nr',
     title='XC number',
     description="All recordings on xeno-canto are assigned a unique catalog number (generally displayed in the form XC76967).\
@@ -176,14 +170,19 @@ class SearchQuery(BaseModel):
   @field_validator(
     'recording_id'
   )
-  def _validate_recording_id(cls, value: Union[str, int]):
-    v = str(value).strip()
-    PATTERN = r'^(?i:xc)?(?P<recording_id>\d{1,9})$'
-    match = re.match(PATTERN, v)
-    if not match:
-      raise ValueError(value)
+  def _validate_recording_id(cls, v: Union[RecordingId, str, int]):
     
-    return match.group('recording_id')
+    if isinstance(v, RecordingId):
+      return f'{v.a}-{v.b}'
+
+    else:
+      s = str(v).strip()
+      PATTERN = r'^(?i:xc)?(?P<recording_id>\d{1,9})$'
+      match = re.match(PATTERN, s)
+      if not match:
+        raise ValueError(v)
+      
+      return RecordingId(int(match.group('recording_id')))
   
   @field_serializer(
     'animal_genus',
@@ -198,14 +197,10 @@ class SearchQuery(BaseModel):
     'recording_sound_type',
     'animal_group',
   )
-  def _serialize_text_fields(self, value: Optional[str], info):
-    if value is None:
+  def _serialize_text_fields(self, v: Optional[str]):
+    if v is None:
       return None
-    s = value.strip()
-    if ' ' in s:
-      return f'"{s.replace(' ', '+')}"'
-    else:
-      return s
+    return utils.wrap_text(v)
 
   # Sequenced fields
   recording_background_animals: Optional[Sequence[str]] = Field(
@@ -224,7 +219,7 @@ class SearchQuery(BaseModel):
   def _serialize_sequenced_text_fields(self, value: Optional[Sequence[str]], info):
     if value is None:
       return None
-    return ','.join(f'"{s.replace(' ', '+')}"' for s in value)
+    return ','.join(utils.wrap_text(s) for s in value)
 
   # Integer fields
   recording_year: Optional[int] = Field(
@@ -349,7 +344,7 @@ class SearchQuery(BaseModel):
     ''',
     default=None,
   )
-  recording_since: Optional[since] = Field(
+  recording_since: Optional[Since] = Field(
     serialization_alias='since',
     description='''
       The since tag allows you to search for recordings that have been uploaded since a certain date.
@@ -436,42 +431,61 @@ class SearchQuery(BaseModel):
   )
   def _serialize_numeric_tag_fields(self, value: search_tags._NumericTag, info):
     if value.constraint is None:
-      return f'{value.value}'
+      return f'{value.a}'
     
     match value.constraint:
       case 'at least':
-        return f'">{value.value}"'
+        return f'">{value.a}"'
       
       case 'at most':
-        return f'"<{value.value}"'
+        return f'"<{value.a}"'
       
       case 'exactly':
-        return f'"={value.value}"'
+        return f'"={value.a}"'
       case _:
         raise ValueError(value.constraint)
   
   @field_serializer(
+    'recording_id',
+  )
+  def _serialize_recording_id(self, v: Union[RecordingId, str]):
+    if isinstance(v, str):
+      return v
+    
+    if v.constraint is None:
+      return f'{v.a}'
+    
+    match v.constraint:
+      case 'between':
+        if not v.b:
+          raise ValueError(v)
+        return f'"{v.a:.0f}-{v.b:.0f}"'
+
+      case _:
+        return v.a
+
+  @field_serializer(
     'recording_length',
-    'recording_temp'
+    'recording_temp',
   )
   def _serialize_numeric_range_tag_fields(self, value: search_tags._NumericRangeTag, info):
     if value.constraint is None:
-      return f'{value.value}'
+      return f'{value.a}'
     
     match value.constraint:
       case 'at least':
-        return f'">{value.value}"'
+        return f'">{value.a}"'
       
       case 'at most':
-        return f'"<{value.value}"'
+        return f'"<{value.a}"'
       
       case 'exactly':
-        return f'"={value.value}"'
+        return f'"={value.a}"'
 
       case 'between':
-        if not value.value_opt:
+        if not value.b:
           raise ValueError(value)
-        return f'"{value.value}-{value.value_opt}"'
+        return f'"{value.a}-{value.b}"'
 
       case _:
         raise ValueError(value.constraint)
@@ -480,7 +494,7 @@ class SearchQuery(BaseModel):
   def _serialize_recording_country(self, value: search_tags.Country, info):
     if value is None:
       return None
-    return _format_text(value.country.name.lower())
+    return utils.wrap_text(value.country.name.lower())
 
   # Typed fields
   recording_box: Optional[Box] = Field(
@@ -524,7 +538,7 @@ class SearchQuery(BaseModel):
         raise ValueError(tag.constraint)
 
   @field_serializer('recording_since')
-  def _serialize_recording_since(self, tag: since):
+  def _serialize_recording_since(self, tag: Since):
     output_format = r'%Y-%m-%d'
     if isinstance(tag.value, datetime):
       return tag.value.strftime(output_format)
