@@ -75,7 +75,7 @@ class XenoCantoRecordingBaseSchema(BaseModel):
     alias='file',
     description='Direct download URL for the audio file.',
   )
-  recording_license_url: License = Field(
+  recording_license: License = Field(
     alias='lic',
     description='License URL of the recording.',
     examples=[r'https://creativecommons.org/licenses/by-nc-sa/4.0/'],
