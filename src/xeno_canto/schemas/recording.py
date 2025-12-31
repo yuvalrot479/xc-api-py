@@ -146,13 +146,6 @@ class XenoCantoRecordingLean:
   recording_number: int
   recording_file_url: str
   recording_file_name: str
-  recording_license: Optional[str]
-  recording_latitude: Optional[float]
-  recording_longitude: Optional[float]
-  recording_altitude: Optional[float]
-  recording_quality: Optional[str]
-  recording_date: Optional[str]
-  recording_author: Optional[str]
 
 
 class XenoCantoRecordingSchema(XenoCantoRecordingBaseSchema):
