@@ -145,8 +145,8 @@ class XenoCantoRecordingLean:
   # Recording fields
   recording_number: int
   recording_file_url: str
-  recording_license: str
   recording_file_name: str
+  recording_license: Optional[str]
   recording_latitude: Optional[float]
   recording_longitude: Optional[float]
   recording_altitude: Optional[float]
