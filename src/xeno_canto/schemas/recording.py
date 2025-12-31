@@ -20,6 +20,7 @@ from .field_validators import (
 from .field_serializers import (
   serialize_yarl,
   serialize_quality_rating,
+  serialize_datetime_date,
 )
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict, BeforeValidator, PlainSerializer
@@ -35,7 +36,7 @@ from dataclasses import dataclass, fields
 
 
 Float = Annotated[Optional[float], BeforeValidator(validate_float)]
-Date = Annotated[Optional[date], BeforeValidator(validate_date)]
+Date = Annotated[Optional[date], BeforeValidator(validate_date), PlainSerializer(serialize_datetime_date)]
 Time = Annotated[Optional[time], BeforeValidator(validate_time)]
 Url = Annotated[Optional[yarl.URL], BeforeValidator(validate_url), PlainSerializer(serialize_yarl)]
 String = Annotated[Optional[str], BeforeValidator(validate_string)]
@@ -150,7 +151,9 @@ class XenoCantoRecordingLean:
   recording_file_name: str
   recording_latitude: Optional[float]
   recording_longitude: Optional[float]
+  recording_altitude: Optional[float]
   recording_quality: Optional[str]
+  recording_date: Optional[str]
 
 
 class XenoCantoRecordingSchema(XenoCantoRecordingBaseSchema):

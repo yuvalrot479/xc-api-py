@@ -122,7 +122,9 @@ class Client:
     return self._fetch_from_api(query, page=1)
 
   def _search(self, query: Union[SearchQuery, Dict[str, Any]]) -> Iterator[XenoCantoRecordingSchema]:
-    limit = query.pop('limit')
+    limit = None
+    if 'limit' in query:
+      limit = query.pop('limit')
     try:
       search_query = SearchQuerySchema.model_validate(query)
 
