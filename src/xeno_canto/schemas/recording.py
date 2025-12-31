@@ -17,11 +17,7 @@ from .field_validators import (
   validate_xc_file_upload_url,
   validate_xc_recording_quality,
 )
-from .field_serializers import (
-  serialize_yarl,
-  serialize_quality_rating,
-  serialize_datetime_date,
-)
+from .field_serializers import serialize_yarl, serialize_quality_rating, serialize_datetime_date, serialize_license
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict, BeforeValidator, PlainSerializer
 from typing import (
@@ -39,6 +35,7 @@ Float = Annotated[Optional[float], BeforeValidator(validate_float)]
 Date = Annotated[Optional[date], BeforeValidator(validate_date), PlainSerializer(serialize_datetime_date)]
 Time = Annotated[Optional[time], BeforeValidator(validate_time)]
 Url = Annotated[Optional[yarl.URL], BeforeValidator(validate_url), PlainSerializer(serialize_yarl)]
+License = Annotated[Optional[yarl.URL], BeforeValidator(validate_url), PlainSerializer(serialize_license)]
 String = Annotated[Optional[str], BeforeValidator(validate_string)]
 Boolean = Annotated[Optional[bool], BeforeValidator(validate_boolean)]
 Timedelta = Annotated[Optional[timedelta], BeforeValidator(validate_timedelta)]
@@ -78,9 +75,10 @@ class XenoCantoRecordingBaseSchema(BaseModel):
     alias='file',
     description='Direct download URL for the audio file.',
   )
-  recording_license_url: Url = Field(
+  recording_license_url: License = Field(
     alias='lic',
     description='License URL of the recording.',
+    examples=[r'https://creativecommons.org/licenses/by-nc-sa/4.0/'],
   )
   recording_file_name: str = Field(
     alias='file-name',
@@ -147,7 +145,7 @@ class XenoCantoRecordingLean:
   # Recording fields
   recording_number: int
   recording_file_url: str
-  recording_license_url: str
+  recording_license: str
   recording_file_name: str
   recording_latitude: Optional[float]
   recording_longitude: Optional[float]

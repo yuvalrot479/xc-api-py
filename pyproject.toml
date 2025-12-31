@@ -17,7 +17,7 @@ license = {text = "MIT"}
 name = "xc-api-py"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.1.16"
+version = "0.1.17"
 
 [tool.pdm]
 distribution = true
