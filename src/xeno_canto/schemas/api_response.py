@@ -1,16 +1,10 @@
-from pydantic import (
-  BaseModel,
-  Field,
-)
-from typing import (
-  Generic,
-  TypeVar,
-  List,
-)
+from .recording import XenoCantoRecordingSchema
 
-T = TypeVar('T')
+from pydantic import BaseModel, Field
+from typing import List
 
-class SearchResponse(BaseModel, Generic[T]):
+
+class ApiResponseSchema(BaseModel):
   num_recordings: int = Field(
     alias='numRecordings',
     description='Total recordings fetched via the query',
@@ -27,6 +21,9 @@ class SearchResponse(BaseModel, Generic[T]):
     alias='numPages',
     description='Total pages of recordings fetched via the query',
   )
-  recordings: List[T] = Field(
+  recordings: List[XenoCantoRecordingSchema] = Field(
     description='List of recording objects on this page',
   )
+
+  def __bool__(self):
+    return bool(self.recordings)

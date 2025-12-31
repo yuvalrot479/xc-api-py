@@ -1,3 +1,15 @@
+from ..types import (
+  AnimalSoundType,
+  AnimalSex,
+  RecordingArea,
+  AnimalLifeStage,
+  AnimalGroup,
+  RecordingMethod,
+  QualityRating,
+)
+from .. import tags
+from ..utils import wrap_text
+
 from pydantic import (
   BaseModel,
   Field,
@@ -7,24 +19,70 @@ from pydantic import (
 from typing import (
   Optional,
   Sequence,
+  Union,
+  TypedDict,
+  TypeAlias,
 )
 from datetime import (
   datetime,
   timedelta,
   timezone,
 )
-import re
 
-from ..types import *
-from ..search_tags import *
-from .. import search_tags
-from .. import utils
 
-class SearchQuery(BaseModel):
+Latitude: TypeAlias = Union[tags.Latitude, float]
+Longitude: TypeAlias = Union[tags.Longitude, float]
+Quality: TypeAlias = Union[tags.RecordingQuality, QualityRating, str, int]
+Length: TypeAlias = Union[tags.Length, float]
+SampleRate: TypeAlias = Union[tags.SampleRate, int]
+Country: TypeAlias = Union[tags.Country, str]
+Temp: TypeAlias = Union[tags.Temp, float]
+RecordingNumber: TypeAlias = Union[tags.RecordingNumber, str, int]
+
+
+class SearchQuery(TypedDict, total=False):
+  limit: Optional[int]
+  # Free fields
+  genus: Optional[str]
+  epithet: Optional[str]
+  author: Optional[str]
+  location: Optional[str]
+  registration_num: Optional[str]
+  recording_license: Optional[str]
+  recording_device: Optional[str]
+  recording_microphone: Optional[str]
+  background_species: Optional[Sequence[str]]
+  year: Optional[int]
+  month: Optional[int]
+  animal_seen: Optional[bool]
+  playback_used: Optional[bool]
+  automatic: Optional[bool]
+  # Well-defined fields
+  sound_type: Optional[AnimalSoundType]
+  area: Optional[RecordingArea]
+  method: Optional[RecordingMethod]
+  sex: Optional[AnimalSex]
+  group: Optional[AnimalGroup]
+  life_stage: Optional[AnimalLifeStage]
+  # Tag fields
+  recording_number: Optional[Union[tags.RecordingNumber, str, int]]
+  since: Optional[tags.Since]
+  temp: Optional[tags.Temp]
+  box: Optional[tags.Box]
+  lat: Optional[Latitude]
+  lon: Optional[Longitude]
+  quality: Optional[Quality]
+  length: Optional[Length]
+  sample_rate: Optional[SampleRate]
+  country: Optional[Country]
+
+
+class SearchQuerySchema(BaseModel):
   # NOTE https://xeno-canto.org/help/search#advanced
 
   # String fields
   animal_genus: Optional[str] = Field(
+    validation_alias='genus',
     serialization_alias='gen',
     description="Genus is part of a species' scientific name, so it is searched by default when performing a basic search (as mentioned above).\
       But you can use the gen tag to limit your search query only to the genus field.\
@@ -34,20 +92,21 @@ class SearchQuery(BaseModel):
     default=None,
   )
   animal_epithet: Optional[str] = Field(
+    validation_alias='epithet',
     serialization_alias='sp',
     default=None,
   )
   recording_author: Optional[str] = Field(
+    validation_alias='author',
     serialization_alias='rec',
     title='Recordist',
     description="To search for all recordings from a particular recordist, use the rec tag. (...).\
       This field accepts a 'matches' operator.",
-    examples=[
-      {'John': 'will return all recordings from recordists whose names contain the string "John".'}
-    ],
+    examples=[{'John': 'will return all recordings from recordists whose names contain the string "John".'}],
     default=None,
   )
   recording_location: Optional[str] = Field(
+    validation_alias='location',
     serialization_alias='loc',
     title='Location',
     description="To return all recordings from a specific location, use the loc tag.\
@@ -66,41 +125,42 @@ class SearchQuery(BaseModel):
             it also accepts a 'matches' operator.",
     default=None,
   )
-  recording_id: Optional[RecordingId] = Field(
+  recording_number: Optional[RecordingNumber] = Field(
+    validation_alias='recording_number',
     serialization_alias='nr',
     title='XC number',
-    description="All recordings on xeno-canto are assigned a unique catalog number (generally displayed in the form XC76967).\
+    description='All recordings on xeno-canto are assigned a unique catalog number (generally displayed in the form XC76967).\
       To search for a known recording number, use the nr tag: for example nr:76967.\
-        You can also search for a range of numbers as nr:88888-88890.",
+        You can also search for a range of numbers as nr:88888-88890.',
     default=None,
   )
   recording_license: Optional[str] = Field(
     serialization_alias='lic',
     title='Recording license',
-    description="Recordings on xeno-canto are licensed under a small number of different Creative Commons licenses.\
+    description='Recordings on xeno-canto are licensed under a small number of different Creative Commons licenses.\
       You can search for recordings that match specific license conditions using the lic tag.\
         License conditions are Attribution (BY), NonCommercial (NC), ShareAlike (SA), NoDerivatives (ND) and Public Domain/copyright free (CC0).\
-          Conditions should be separated by a '-' character.\
+          Conditions should be separated by a \'-\' character.\
             For instance, to find recordings that are licensed under an Attribution-NonCommercial-ShareAlike license, use lic:BY-NC-SA;\
-              for \"no rights reserved\" recordings, use lic:PD.\
-                See the Creative Commons website for more details about the individual licenses.",
+              for "no rights reserved" recordings, use lic:PD.\
+                See the Creative Commons website for more details about the individual licenses.',
     default=None,
   )
   animal_registration_num: Optional[str] = Field(
     serialization_alias='regnr',
     title='Registration number of specimen (when collected)',
-    description='''
+    description="""
       The regnr tag can be used to search for animals that were sound
        recorded before ending up in a (museum) collection.
       This tag also accepts a 'matches' operator.
-    ''',
+    """,
     default=None,
   )
   recording_device: Optional[str] = Field(
     serialization_alias='dvc',
-    description='''
+    description="""
       Use the dvc (device) and mic (microphone) tags to search for specific recording equipment.
-    ''',
+    """,
     default=None,
   )
   recording_microphone: Optional[str] = Field(
@@ -111,7 +171,7 @@ class SearchQuery(BaseModel):
   recording_sound_type: Optional[AnimalSoundType] = Field(
     serialization_alias='type',
     title='The sound type of the recording',
-    description='''
+    description="""
       To search for recordings of a particular sound type, use the type tag.
       For instance, type:song will return all recordings identified as songs.
       Note that options may pertain to a specific group only, e.g. 'searching song' is a search term used for grasshoppers, but not for birds.
@@ -119,23 +179,17 @@ class SearchQuery(BaseModel):
       Up until 2022, the 'type' tag used to search a free text field.
       We have retained the option to search for non-standardized sound types by using the othertype tag.
       This tag also accepts a 'matches' operator, e.g. othertype:"=wing flapping".
-    ''',
+    """,
     default=None,
   )
   animal_group: Optional[AnimalGroup] = Field(
     serialization_alias='grp',
-    description="Use the grp tag to narrow down your search to a specific group.\
+    description='Use the grp tag to narrow down your search to a specific group.\
       This tag is particularly useful in combination with one of the other tags. Valid group values are (...).\
         You can also use their respective ids (1 to 5), so grp:2 will restrict your search to grasshoppers.\
           Soundscapes are a special case, as these recordings may include multiple groups.\
-            Use grp:soundscape or grp:0 to search these.",
-    examples=[
-      'birds',
-      'grasshoppers',
-      'bats',
-      'frogs',
-      'land mammals'
-    ],
+            Use grp:soundscape or grp:0 to search these.',
+    examples=['birds', 'grasshoppers', 'bats', 'frogs', 'land mammals'],
     default=None,
   )
   animal_sex: Optional[AnimalSex] = Field(
@@ -166,7 +220,7 @@ class SearchQuery(BaseModel):
         This tag always uses a 'matches' operator.",
     default=None,
   )
-  
+
   @field_serializer(
     'animal_genus',
     'animal_epithet',
@@ -180,29 +234,31 @@ class SearchQuery(BaseModel):
     'recording_sound_type',
     'animal_group',
   )
-  def _serialize_text_fields(self, v: Optional[str]):
+  def serialize_text_fields(self, v: Optional[str]):
     if v is None:
       return None
-    return utils.wrap_text(v)
+    return wrap_text(v)
 
   # Sequenced fields
   recording_background_animals: Optional[Sequence[str]] = Field(
     serialization_alias='also',
     title='Background species',
-    description="To search for recordings that have a given species in the background, use the also tag.\
+    description='To search for recordings that have a given species in the background, use the also tag.\
       Use this field to search for both species (common names in English and scientific names)\
-        and families (scientific names).",
+        and families (scientific names).',
     examples=[
-      {'formicariidae': 'will return all recordings that have a member of the Antthrush family identified as a background voice.'},
+      {
+        'formicariidae': 'will return all recordings that have a member of the Antthrush family identified as a background voice.'
+      },
     ],
     default=None,
   )
 
   @field_serializer('recording_background_animals')
-  def _serialize_sequenced_text_fields(self, value: Optional[Sequence[str]], info):
+  def serialize_sequenced_text_fields(self, value: Optional[Sequence[str]], info):
     if value is None:
       return None
-    return ','.join(utils.wrap_text(s) for s in value)
+    return ','.join(wrap_text(s) for s in value)
 
   # Integer fields
   recording_year: Optional[int] = Field(
@@ -215,22 +271,22 @@ class SearchQuery(BaseModel):
   )
   collection_year: Optional[int] = Field(
     serialization_alias='colyear',
-    description='''
+    description="""
       The year and month tags allow you to search for recordings that were recorded on a certain date.
       The following query will find all recordings that were recorded in May of 2010: year:2010 month:5. Similarly,
        month:6 will find recordings that were recorded during the month of June in any year.
       Both tags also accept '>' (after) and '<' (before).
-    ''',
+    """,
     default=None,
   )
   collection_month: Optional[int] = Field(
     serialization_alias='colmonth',
-    description='''
+    description="""
       The year and month tags allow you to search for recordings that were recorded on a certain date.
       The following query will find all recordings that were recorded in May of 2010: year:2010 month:5. Similarly,
        month:6 will find recordings that were recorded during the month of June in any year.
       Both tags also accept '>' (after) and '<' (before).
-    ''',
+    """,
     default=None,
   )
 
@@ -257,32 +313,32 @@ class SearchQuery(BaseModel):
   recording_animal_seen: Optional[bool] = Field(
     serialization_alias='seen',
     title='Animal seen',
-    description="Two tags (seen and playback respectively) that previously were stored as part of Recordist remarks, but now can be used independently.\
+    description='Two tags (seen and playback respectively) that previously were stored as part of Recordist remarks, but now can be used independently.\
       Both only accept yes and no as input.\
         For example, use seen:yes playback:no to search for recordings where the animal was seen,\
-          but not lured by playback.",
+          but not lured by playback.',
     default=None,
   )
   recording_playback_used: Optional[bool] = Field(
     serialization_alias='playback',
     title='Was playback used to lure the animal?',
-    description='''
+    description="""
       Two tags (seen and playback respectively) that previously were stored as part of Recordist remarks,
        but now can be used independently. Both only accept yes and no as input.
       For example, use seen:yes playback:no to search for recordings where the animal was seen,
        but not lured by playback.
-    ''',
+    """,
     default=None,
   )
   recording_automatic: Optional[bool] = Field(
     serialization_alias='auto',
-    description='''
+    description="""
       The auto tag searches for automatic (non-supervised) recordings.
       This tag accepts yes and no.
-    ''',
+    """,
     default=None,
   )
-  
+
   @field_serializer(
     'recording_animal_seen',
     'recording_playback_used',
@@ -301,7 +357,7 @@ class SearchQuery(BaseModel):
   recording_latitude: Optional[Latitude] = Field(
     serialization_alias='lat',
     title='Latitude',
-    description='''
+    description="""
       The latitude of the recording in decimal coordinates.
       There are two sets of tags that can be used to search via geographic coordinates.
       The first set of tags is lat and lon.
@@ -309,13 +365,13 @@ class SearchQuery(BaseModel):
        for instance: lat:-12.234 lon:-69.98.
       This field also accepts '<' and '>' operators;
        e.g. use lat:">66.5" to search for all recordings made above the Arctic Circle.
-    ''',
+    """,
     default=None,
   )
   recording_longitude: Optional[Longitude] = Field(
     serialization_alias='lon',
     title='Longitude',
-    description='''
+    description="""
       The longitude of the recording in decimal coordinates.
       The latitude of the recording in decimal coordinates.
       There are two sets of tags that can be used to search via geographic coordinates.
@@ -324,20 +380,21 @@ class SearchQuery(BaseModel):
        for instance: lat:-12.234 lon:-69.98.
       This field also accepts '<' and '>' operators;
        e.g. use lat:">66.5" to search for all recordings made above the Arctic Circle.
-    ''',
+    """,
     default=None,
   )
-  recording_since: Optional[Since] = Field(
+  recording_since: Optional[tags.Since] = Field(
     serialization_alias='since',
-    description='''
+    description="""
       The since tag allows you to search for recordings that have been uploaded since a certain date.
       Using a simple integer value such as since:3 will find all recordings uploaded in the past 3 days.
       If you use a date with a format of YYYY-MM-DD, it will find all recordings uploaded since that date (e.g. since:2012-11-09).
       Note that this search considers the upload date, not the date that the recording was made.',
-    ''',
+    """,
     default=None,
   )
-  recording_quality: Optional[RecordingQuality] = Field(
+  recording_quality: Optional[Quality] = Field(
+    validation_alias='quality',
     serialization_alias='q',
     title='Recording quality',
     description="Recordings are rated by quality.\
@@ -345,36 +402,38 @@ class SearchQuery(BaseModel):
         To search for recordings that match a certain quality rating, use the q tag.\
           This field also accepts '<' and '>' operators.",
     examples=[
-      {'A':    'will return recordings with a quality rating of A.'},
+      {'A': 'will return recordings with a quality rating of A.'},
       {'"<C"': 'will return recordings with a quality rating of D or E.'},
-      {'">C"': 'will return recordings with a quality rating of B or A.'}
+      {'">C"': 'will return recordings with a quality rating of B or A.'},
     ],
     default=None,
   )
   recording_length: Optional[Length] = Field(
     serialization_alias='len',
     title='Recording length',
-    description='''
+    description="""
       To search for recordings that match a certain length (in seconds), use the len tag.
       This field also accepts '<' , '>' and '=' operators.
-    ''',
+    """,
     examples=[
-      {'10':       'will return recordings with a duration of 10 seconds (with a margin of 1%, so actually between 9.9 and 10.1 seconds'},
-      {'10-15':    'will return recordings lasting between 10 and 15 seconds.'},
-      {'"<30"':    'will return recordings half a minute or shorter in length.'},
-      {'">120"':   'will return recordings longer than two minutes in length.'},
-      {'"=19.8"':  'will return recordings lasting exactly 19.8 seconds, dropping the default 1% margin.'},
+      {
+        '10': 'will return recordings with a duration of 10 seconds (with a margin of 1%, so actually between 9.9 and 10.1 seconds'
+      },
+      {'10-15': 'will return recordings lasting between 10 and 15 seconds.'},
+      {'"<30"': 'will return recordings half a minute or shorter in length.'},
+      {'">120"': 'will return recordings longer than two minutes in length.'},
+      {'"=19.8"': 'will return recordings lasting exactly 19.8 seconds, dropping the default 1% margin.'},
     ],
     default=None,
   )
   recording_temp: Optional[Temp] = Field(
     serialization_alias='temp',
     title='Temperature during recording (applicable to specific groups only)',
-    description='''
+    description="""
       The temp tag for temperature currently also applies only to grasshoppers.
       This field also accepts '<' and '>' operators.
       Use temp:25 to search for sounds recorded between 25-26 °C or temp:">20" for temperatures over 20 °C.
-    ''',
+    """,
     default=None,
   )
 
@@ -388,11 +447,11 @@ class SearchQuery(BaseModel):
   )
   recording_sample_rate: Optional[SampleRate] = Field(
     serialization_alias='smp',
-    description='''
+    description="""
       The smp tag can be used to search for recordings with a specific sampling rate (in Hz).
       For example, smp:">48000" will return hi-res recordings.
       Other frequencies include 22050, 44100 and multiples of 48000.
-    ''',
+    """,
     default=None,
   )
   recording_country: Optional[Country] = Field(
@@ -402,66 +461,68 @@ class SearchQuery(BaseModel):
       (...).\
         This field uses a 'starts with' query and accepts a 'matches' operator.",
     examples=[
-      {'brazil': 'return all recordings from the country of \"Brazil\"'},
+      {'brazil': 'return all recordings from the country of "Brazil"'},
     ],
     default=None,
   )
-  
+
   @field_serializer(
     'recording_latitude',
     'recording_longitude',
     'recording_sample_rate',
   )
-  def _serialize_numeric_tag_fields(self, value: search_tags._NumericTag, info):
-    if value.constraint is None:
-      return f'{value.a}'
-    
-    match value.constraint:
-      case 'at least':
-        return f'">{value.a}"'
-      
-      case 'at most':
-        return f'"<{value.a}"'
-      
-      case 'exactly':
-        return f'"={value.a}"'
-      case _:
-        raise ValueError(value.constraint)
-  
-  @field_serializer(
-    'recording_id',
-  )
-  def _serialize_recording_id(self, v: Union[RecordingId, str]):
-    if isinstance(v, str):
-      return v
-    
+  def serialize_numeric_tag_fields(self, v: tags._NumericTag):
     if v.constraint is None:
       return f'{v.a}'
-    
+
     match v.constraint:
-      case 'between':
+      case 'at least':
+        return f'">{v.a}"'
+
+      case 'at most':
+        return f'"<{v.a}"'
+
+      case 'exactly':
+        return f'"={v.a}"'
+      case _:
+        raise ValueError(v.constraint)
+
+  @field_serializer(
+    'recording_number',
+  )
+  def serialize_recording_number(self, v: RecordingNumber):
+    if isinstance(v, int):
+      return v
+
+    elif isinstance(v, str):
+      return int(v)
+
+    elif isinstance(v, tags.RecordingNumber):
+      if v.constraint is None:
+        return v.a  # FIXME
+
+      elif v.constraint == 'between':
         if not v.b:
           raise ValueError(v)
         return f'"{v.a:.0f}-{v.b:.0f}"'
 
-      case _:
-        return v.a
+    return None
 
   @field_serializer(
     'recording_length',
     'recording_temp',
   )
-  def _serialize_numeric_range_tag_fields(self, value: search_tags._NumericRangeTag, info):
+  def _serialize_numeric_range_tag_fields(self, value: tags._NumericRangeTag, info):
     if value.constraint is None:
       return f'{value.a}'
-    
+
     match value.constraint:
       case 'at least':
         return f'">{value.a}"'
-      
+
       case 'at most':
         return f'"<{value.a}"'
-      
+
       case 'exactly':
         return f'"={value.a}"'
 
@@ -474,68 +535,85 @@ class SearchQuery(BaseModel):
         raise ValueError(value.constraint)
 
   @field_serializer('recording_country')
-  def _serialize_recording_country(self, value: search_tags.Country, info):
-    if value is None:
+  def _serialize_recording_country(self, v: Country):
+    if isinstance(v, str):
+      return wrap_text(v)
+
+    elif isinstance(v, tags.Country):
+      return wrap_text(v.country.name.lower())
+
+    else:
       return None
-    return utils.wrap_text(value.country.name.lower())
 
   # Typed fields
-  recording_box: Optional[Box] = Field(
+  recording_box: Optional[tags.Box] = Field(
     serialization_alias='box',
     title='Box',
-    description="(...) The second tag allows you to search for recordings that occur within a given rectangle,\
+    description='(...) The second tag allows you to search for recordings that occur within a given rectangle,\
       and is called box.\
         It is more versatile than lat and lon, but is more awkward to type in manually,\
           so we have made a map-based search tool to make things simpler.\
             The general format of the box tag is as follows: box:LAT_MIN,LON_MIN,LAT_MAX,LON_MAX.\
-              Note that there must not be any spaces between the coordinates.",
+              Note that there must not be any spaces between the coordinates.',
     default=None,
   )
 
-  
   @field_serializer('recording_quality')
-  def _serialize_recording_quality(self, tag: RecordingQuality):
-    q = tag.a.name
+  def serialize_recording_quality(self, v: Quality):
+    if isinstance(v, tags.RecordingQuality):
+      q = v.a
 
-    match tag.constraint:
-      case None:
-        return q
-      
-      case 'at least':
-        if q == 'A':
-          return 'A'
-        elif q == 'E':
-          return None
-        else:
-          return f'">{QualityRating(tag.a + 1).name}"'
-      
-      case 'at most':
-        if q == 'A':
-          return None
-        elif q == 'E':
-          return 'E'
-        else:
-          return f'"<{QualityRating(tag.a - 1).name}"'
-      
-      case _:
-        raise ValueError(tag.constraint)
+      match v.constraint:
+        case None:
+          return q
+
+        case 'at least':
+          if q == 'A':
+            return 'A'
+          elif q == 'E':
+            return None
+          else:
+            return f'">{QualityRating(v.a + 1).name}"'
+
+        case 'at most':
+          if q == 'A':
+            return None
+          elif q == 'E':
+            return 'E'
+          else:
+            return f'"<{QualityRating(v.a - 1).name}"'
+
+        case _:
+          raise ValueError(v.constraint)
+
+    elif isinstance(v, QualityRating):
+      return v.name
+
+    elif isinstance(v, int):
+      return QualityRating(v).name
+
+    elif isinstance(v, str):
+      return v
+
+    else:
+      return None
 
   @field_serializer('recording_since')
-  def _serialize_recording_since(self, tag: Since):
+  def serialize_recording_since(self, v: tags.Since):
     output_format = r'%Y-%m-%d'
-    if isinstance(tag.value, datetime):
-      return tag.value.strftime(output_format)
-    
-    elif isinstance(tag.value, timedelta):
+    if isinstance(v.value, datetime):
+      return v.value.strftime(output_format)
+
+    elif isinstance(v.value, timedelta):
       today = datetime.now(timezone.utc)
-      lookback = today - tag.value
+      lookback = today - v.value
       return lookback.strftime(output_format)
-    
-    elif isinstance(tag.value, int):
-      return str(tag.value)
-    
-    raise ValueError(tag)
-  
+
+    elif isinstance(v.value, int):
+      return str(v.value)
+
+    raise ValueError(v)
+
   @field_serializer('recording_box')
-  def _serialize_recording_box(self, tag: Box):
-    return f'{tag.lat_min},{tag.lon_min},{tag.lat_max},{tag.lon_max}'
+  def serialize_recording_box(self, v: tags.Box):
+    return f'{v.lat_min},{v.lon_min},{v.lat_max},{v.lon_max}'

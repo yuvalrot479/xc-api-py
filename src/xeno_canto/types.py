@@ -1,13 +1,16 @@
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, Union
 from enum import IntEnum
-from datetime import date, time, timedelta
+
 
 class QualityRating(IntEnum):
-  A = 1 # Best
+  A = 1  # Best
   B = 2
   C = 3
   D = 4
-  E = 5 # Worst
+  E = 5  # Worst
+
+
+RecordingId: TypeAlias = Union[str, int]
 
 NumericConstraint: TypeAlias = Literal[
   'exactly',
@@ -44,13 +47,7 @@ AnimalLifeStage: TypeAlias = Literal[
   'subadult',
 ]
 
-AnimalGroup: TypeAlias = Literal[
-  'grasshoppers',
-  'bats',
-  'birds',
-  'frogs',
-  'land mammals'
-]
+AnimalGroup: TypeAlias = Literal['grasshoppers', 'bats', 'birds', 'frogs', 'land mammals']
 
 AnimalSoundType: TypeAlias = Literal[
   'aberrant',

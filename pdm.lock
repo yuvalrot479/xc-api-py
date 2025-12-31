@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:0e7899348cd4614bd54f8a73207e5595fe78563d87595ab2a0119b00c496fedc"
+content_hash = "sha256:3e92f165861a0f225189cf566137e8637687df387ae168bbc8e27298baece1d9"
 
 [[metadata.targets]]
 requires_python = "==3.14.*"
@@ -500,6 +500,18 @@ files = [
 ]
 
 [[package]]
+name = "pyrate-limiter"
+version = "2.10.0"
+requires_python = ">=3.7,<4.0"
+summary = "Python Rate-Limiter using Leaky-Bucket Algorithm"
+groups = ["default"]
+marker = "python_version == \"3.14\""
+files = [
+    {file = "pyrate_limiter-2.10.0-py3-none-any.whl", hash = "sha256:a99e52159f5ed5eb58118bed8c645e30818e7c0e0d127a0585c8277c776b0f7f"},
+    {file = "pyrate_limiter-2.10.0.tar.gz", hash = "sha256:98cc52cdbe058458e945ae87d4fd5a73186497ffa545ee6e98372f8599a5bd34"},
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.1"
 requires_python = ">=3.10"
@@ -609,6 +621,22 @@ dependencies = [
 files = [
     {file = "requests-mock-1.12.1.tar.gz", hash = "sha256:e9e12e333b525156e82a3c852f22016b9158220d2f47454de9cae8a77d371401"},
     {file = "requests_mock-1.12.1-py2.py3-none-any.whl", hash = "sha256:b1e37054004cdd5e56c84454cc7df12b25f90f382159087f4b6915aaeef39563"},
+]
+
+[[package]]
+name = "requests-ratelimiter"
+version = "0.7.0"
+requires_python = "<4.0,>=3.7"
+summary = "Rate-limiting for the requests library"
+groups = ["default"]
+marker = "python_version == \"3.14\""
+dependencies = [
+    "pyrate-limiter<3.0",
+    "requests>=2.20",
+]
+files = [
+    {file = "requests_ratelimiter-0.7.0-py3-none-any.whl", hash = "sha256:1a7ef2faaa790272722db8539728690046237766fcc479f85b9591e5356a8185"},
+    {file = "requests_ratelimiter-0.7.0.tar.gz", hash = "sha256:a070c8a359a6f3a001b0ccb08f17228b7ae0a6e21d8df5b6f6bd58389cddde45"},
 ]
 
 [[package]]
