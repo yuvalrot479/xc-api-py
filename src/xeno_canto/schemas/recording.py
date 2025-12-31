@@ -138,9 +138,9 @@ class Oscillograms(BaseModel):
 class XenoCantoRecordingLean:
   animal_genus: str
   animal_epithet: str
-  animal_subspecies: str
   animal_common_name: str
-  animal_sex: str
+  animal_subspecies: Optional[str]
+  animal_sex: Optional[str]
 
   # Recording fields
   recording_number: int
@@ -152,6 +152,7 @@ class XenoCantoRecordingLean:
   recording_altitude: Optional[float]
   recording_quality: Optional[str]
   recording_date: Optional[str]
+  recording_author: Optional[str]
 
 
 class XenoCantoRecordingSchema(XenoCantoRecordingBaseSchema):
