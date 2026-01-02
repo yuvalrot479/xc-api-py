@@ -9,9 +9,7 @@ dependencies = [
   "miniaudio>=1.61",
   "numpy>=2.3.5",
   "requests>=2.32.5",
-  "requests-cache>=1.2.1",
   "requests-ratelimiter>=0.7.0",
-  "tqdm>=4.67.1",
 ]
 description = "An intuitive, type-safe Python wrapper for the Xeno-Canto API"
 license = {text = "MIT"}

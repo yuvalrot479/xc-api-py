@@ -11,8 +11,4 @@ if not api_key:
 
 client = Client(api_key, verbose=True)
 rs = client.search(binomial='Canis aureus', limit=30)
-# rs2 = client.search(genus='grus', epithet='grus', limit=10)
-
-# ids = [random.randrange(1, int(1e6)) for _ in range(20)]
-
 client.download(rs)  # type: ignore
