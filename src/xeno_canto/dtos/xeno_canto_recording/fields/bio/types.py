@@ -1,22 +1,4 @@
 from typing import Literal
-from enum import IntEnum
-
-
-class XcQualityRating(IntEnum):
-  A = 1  # Best
-  B = 2
-  C = 3
-  D = 4
-  E = 5  # Worst
-
-
-Area = Literal[
-  'africa',
-  'america',
-  'asia',
-  'australia',
-  'europe',
-]
 
 Sex = Literal[
   'male',
@@ -31,26 +13,7 @@ LifeStage = Literal[
   'subadult',
 ]
 
-RecordingMethod = Literal[
-  'emerging from roost',
-  'field recording',
-  'fluorescent light tag',
-  'hand-release',
-  'in enclosure',
-  'in net',
-  'in the hand',
-  'roosting',
-  'roped',
-  'studio recording',
-]
-
-Group = Literal[
-  'grasshoppers',
-  'bats',
-  'birds',
-  'frogs',
-  'land mammals',
-]
+Group = Literal['grasshoppers', 'bats', 'birds', 'frogs', 'land mammals']
 
 SoundType = Literal[
   'aberrant',

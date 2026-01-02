@@ -4,7 +4,7 @@
 [![Pydantic](https://img.shields.io/badge/data-Pydantic-red)](https://docs.pydantic.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An intuitive, type-safe Python wrapper for the [Xeno-Canto API](https://xeno-canto.org/explore/api).  
+An intuitive, type-safe Python wrapper for the [Xeno-Canto API](https://xeno-canto.org/api/3).  
 Streamline your bioacoustics and machine learning workflows by searching, filtering, and processing wildlife recordings with full validation and IDE autocompletion.  
 
 ## Project Sponsors
@@ -23,88 +23,133 @@ Users are responsible for adhering to the [Xeno-Canto Terms of Use](https://xeno
 
 ## Quickstart
 
+### Installation
+
+> It is highly recommended to use a **virtual environment** to manage your project's dependencies and avoid conflicts with system-wide packages.
+> 
+> **Creating a virtual environment:**
+> ```bash
+> # Create the environment
+> python -m venv .venv
+> 
+> # Activate it (macOS/Linux)
+> source .venv/bin/activate
+> 
+> # Activate it (Windows)
+> .venv\Scripts\activate
+> ```
+> For more details, see the official [Python guide on Virtual Environments](https://docs.python.org/3/library/venv.html).
+
+#### PIP
 ```bash
 pip install xc-api-py
 ```
-```bash
-pdm add xc-api-py
-```
 
-## Basic Usage
-```py
-from xc_api import Client, SearchQuery, tags
-from datetime import timedelta
+### Basic Usage
 
-# Instanciate a client with your Xeno Canto API key
-client = Client('Your API key')
+```python
+from xeno_canto import Client
 
-# Create a query
-query = SearchQuery(
-  animal_genus='acrocephalus',
-  animal_sex='male',
-  recording_length=tags.Length.at_least(timedelta(seconds=10)),
-  recording_country=tags.Country('germany'),
+client = Client(api_key='YOUR_API_KEY')
+
+# Search for multiple species at once
+recordings = client.search(
+    species_list=['Grus grus', 'Acrocephalus melanopogon'], 
+    limit=50
 )
 
-# Search the API, optionally pass a limit argument
-recordings = client.find(query, limit=10)
-
-# Get a specific recording
-recording = client.get_by_id('129150')
+# Download and organize automatically
+client.download(
+    recordings, 
+    grouping='species', 
+    naming='catalogue'
+)
 ```
 
-## Advanced Usage
-### Pandas
-```py
-from xc_api import SearchQuery, RecordingAudio
-import pandas as pd
+## Advanced Features
 
-query = SearchQuery(...)
-recordings = client.find(query)
-df = pd.DataFrame.from_records([r.model_dump() for r in recordings])
+### Bulk Downloading & Organization
+The `download` method supports advanced path management and naming conventions to keep your datasets organized for machine learning or archival.
+
+| Argument | Options | Description |
+| :--- | :--- | :--- |
+| `grouping` | `'flat'`, `'species'`, `'recordist'` | Nest files in subdirs (e.g., `genus-species/subspecies/file.mp3`). |
+| `naming` | `'original'`, `'catalogue'` | Use uploader filename or standardized `xc12345.mp3`. |
+| `target_dir` | `str` or `Path` | If `None`, creates a timestamped folder: `xc-recordings-YYYY-MM-DD...` |
+
+```python
+# Create a recordist-based dataset with standardized names
+client.download(
+    recordings, 
+    target_dir='./my_dataset',
+    grouping='recordist',
+    naming='catalogue'
+)
 ```
 
-### SoundDevice
-```py
-from xc_api import SearchQuery, RecordingAudio
+### Flexible Search
+The `search` method supports iterative species lists, coordinate filtering, and streaming for large datasets.
+
+```python
+# Search across multiple species with a global limit and streaming
+rs = client.search(
+    species_list=['Passer domesticus', 'Passer montanus'],
+    country='israel',
+    limit=100,
+    stream=True
+)
+```
+
+### Data Return Modes & "Lean" Objects
+You can control exactly what kind of objects the client returns using the `mode` and `lean` parameters. 
+
+The `lean=True` flag optimizes performance by filtering out dozens of metadata fields (like location descriptions, temperature, or uploader comments) and returning only the critical core needed for identification and file retrieval.
+
+
+
+| Mode | Return Type | Best For |
+| :--- | :--- | :--- |
+| **`dataclass`** (default) | `XenoCantoRecording` | Fast script performance |
+| **`pydantic`** | `XenoCantoRecordingSchema` | Strict runtime validation |
+| **`audio`** | `XenoCantoAudio` | Direct playback and processing |
+| **`dict`** | `dict` | Loading into Pandas DataFrames |
+| **`json`** | `str` | Raw archival/caching |
+
+```python
+# High-speed search returning lean dataclasses
+recordings = client.search(genus='apus', mode='dataclass', lean=True)
+```
+
+### SoundDevice Playback
+```python
 import sounddevice as sd
+from xeno_canto import Client
 
-recording = client.get_by_id(...)
+client = Client('API_KEY')
+# mode='audio' returns XenoCantoAudio objects
+recording = client.get_by_id('XC125492', mode='audio')
 
-audio = RecordingAudio.from_recording(recording)
-
-with audio.load() as a:
-  sd.play(a.to_numpy(), a.sample_rate)
-  sd.wait()
-
-# Optional: save original file locally
-audio.save()
+with recording.load() as a:
+    sd.play(a.to_numpy(), a.sample_rate)
+    sd.wait()
 ```
 
-### BirdNET
-```py
-from xc_api import SearchQuery, RecordingAudio
-from birdnetlib import RecordingBuffer
+### BirdNET Integration
+```python
 from birdnetlib.analyzer import Analyzer
-from datetime import timedelta
+from birdnetlib import RecordingBuffer
 
 analyzer = Analyzer()
+recording = client.get_by_id('XC779948', mode='audio')
 
-query = SearchQuery(
-  animal_group='birds',
-  recording_sample_rate=tags.SampleRate(48000), # IMPORTANT: BirdNET analyzer expects 48000Khz
-)
-
-recording = client.find_one(query, limit=1)
-
-audio = RecordingAudio.from_recording(recording)
-
-with audio.load() as a:
-  arr = a.to_birdnet(length=timedelta(seconds=3.0)) # Optional: Segment the audio
-
+with recording.load() as a:
+    # Segment audio for BirdNET (expects 48kHz)
+    arr = a.to_birdnet() 
+    
 buffer = RecordingBuffer(analyzer, arr)
 buffer.analyze()
-
-for detection in buffer.detections:
-  ...
+print(buffer.detections)
 ```
+
+## License
+Distributed under the MIT License. See `LICENSE` for more information.

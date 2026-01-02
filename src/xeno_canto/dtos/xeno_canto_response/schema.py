@@ -1,10 +1,8 @@
-from .recording import XenoCantoRecordingSchema
-
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict, Any
 
 
-class ApiResponseSchema(BaseModel):
+class XenoCantoResponseSchema(BaseModel):
   num_recordings: int = Field(
     alias='numRecordings',
     description='Total recordings fetched via the query',
@@ -21,8 +19,8 @@ class ApiResponseSchema(BaseModel):
     alias='numPages',
     description='Total pages of recordings fetched via the query',
   )
-  recordings: List[XenoCantoRecordingSchema] = Field(
-    description='List of recording objects on this page',
+  recordings: List[Any] = Field(
+    description='Raw list of recording objects on this page',
   )
 
   def __bool__(self):
