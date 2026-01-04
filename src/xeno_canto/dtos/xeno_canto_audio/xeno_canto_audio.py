@@ -19,19 +19,21 @@ from contextlib import contextmanager
 from uuid import uuid4
 from dataclasses import is_dataclass
 from pydantic import BaseModel
-from requests import Session
+from copy import copy
 
 
 @dataclass
 class XenoCantoAudio:
-  binomial: Optional[str] = None
+  number: int
+  name: str
+  fmt: str
+  recordist: str
+  sample_rate: int
+  genus: str
+  epithet: str
   subspecies: Optional[str] = None
-  number: Optional[int] = None
-  recordist: Optional[str] = None
-  name: Optional[str] = None
+  sound_type: Optional[str] = None
   quality: Optional[XcQualityRating] = None
-  sample_rate: Optional[int] = field(default=None, repr=True, metadata={'units': 'Hz'})
-  fmt: Optional[str] = None
 
   _bytes_promise: Optional[partial[bytes]] = field(default=None, init=False, repr=False)
   _original_file: Optional[Path] = field(default=None, init=False, repr=False)
@@ -49,9 +51,7 @@ class XenoCantoAudio:
         return
 
       if self._bytes_promise:
-        # Fetch remote bytes and decode
         raw_bytes = self._bytes_promise()
-        # miniaudio.decode requires bytes; target_sr is the file's SR
         self._decoded = miniaudio.decode(raw_bytes)
 
       elif self._original_file:
@@ -66,40 +66,47 @@ class XenoCantoAudio:
 
   @classmethod
   def from_record(cls, r: Any, promise: Optional[partial[bytes]] = None) -> Self:
+    if isinstance(r, XenoCantoAudio):
+      return copy(r)  # type: ignore
+
     if isinstance(r, BaseModel) or is_dataclass(r):
-      name = r.file_name  # type: ignore
+      path = Path(r.file_name)  # type: ignore
       number = r.number  # type: ignore
       recordist = r.recordist  # type: ignore
       quality = r.quality  # type: ignore
       sample_rate = r.sample_rate  # type: ignore
       file_dl = r.file_download  # type: ignore
-      binomial = r.binomial  # type: ignore
+      genus = r.genus  # type: ignore
+      epithet = r.epithet  # type: ignore
       subspecies = r.subspecies  # type: ignore
-      fmt = 'wav'  # FIXME
+      sound_type = r.sound_type  # type: ignore
 
     elif isinstance(r, dict):
-      name = r['file_name']
+      path = Path(r['file_name'])  # type: ignore
       number = r['number']
       recordist = r['recordist']
-      quality = r['quality']
+      quality = r.get('quality', None)
       sample_rate = r['sample_rate']
       file_dl = r['file_download']
-      binomial = r['genus'] + ' ' + r['epithet']
+      genus = r['genus']
+      epithet = r['epithet']
       subspecies = r.get('subspecies', None)
-      fmt = 'wav'  # FIXME
+      sound_type = r['sound_type']
 
     else:
       raise ValueError(r)
 
     obj = cls(
-      name=name,
+      name=path.stem,
+      fmt=path.suffix.strip('.').lower(),
       number=number,
       recordist=recordist,
       quality=quality,
       sample_rate=sample_rate,
-      binomial=binomial,
+      genus=genus,
+      epithet=epithet,
+      sound_type=sound_type,
       subspecies=subspecies,
-      fmt=fmt,
     )
 
     if promise:
@@ -109,15 +116,14 @@ class XenoCantoAudio:
 
   @classmethod
   def from_file(cls, path: Union[str, Path]) -> Self:
-    path = Path(path)
-    if not path.exists():
-      raise FileNotFoundError(path)
+    raise NotImplementedError()
+    # path = Path(path)
+    # if not path.exists():
+    #   raise FileNotFoundError(path)
 
-    obj = cls(name=path.name)
-    obj._original_file = path
-    return obj
-
-  # --- Methods ---
+    # obj = cls(name=path.name)  # type: ignore
+    # obj._original_file = path
+    # return obj
 
   def to_numpy(self, start: Optional[timedelta] = None, length: Optional[timedelta] = None) -> np.ndarray:
     if self._decoded is None:

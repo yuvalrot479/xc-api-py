@@ -282,6 +282,11 @@ class Client:
     except StopIteration:
       return None
 
+  def _download_promise(self, file_dl: str) -> bytes:
+    resp = self._download_session.get(file_dl)
+    resp.raise_for_status()
+    return resp.content
+
   def _map(self, rs: Iterable[XenoCantoRecordingSchema], mode: ReturnMode, lean: bool = False) -> Iterator[Record]:
     match (mode, lean):
       case ('dataclass', True):
@@ -300,7 +305,7 @@ class Client:
         yield from (r.model_dump(mode='python') for r in rs)
 
       case ('audio', _):
-        yield from (XenoCantoAudio.from_record(r) for r in rs)
+        yield from (XenoCantoAudio.from_record(r, self._download_promise) for r in rs)  # type: ignore
 
       case ('json', _):
         yield from (r.model_dump_json() for r in rs)
@@ -455,12 +460,7 @@ class Client:
       fetched = self._search_id_scattered(recordings)  # type: ignore
       recordings = [r for _, r in fetched if r is not None]
 
-    def promise(file_dl: str) -> bytes:
-      resp = self._download_session.get(file_dl)
-      resp.raise_for_status()
-      return resp.content
-
-    audios = [XenoCantoAudio.from_record(r, promise) for r in recordings]  # type: ignore
+    audios = [XenoCantoAudio.from_record(r, self._download_promise) for r in recordings]  # type: ignore
 
     if target_dir is None:
       # Generate safe timestamp: 2026-01-02T13-57-53
