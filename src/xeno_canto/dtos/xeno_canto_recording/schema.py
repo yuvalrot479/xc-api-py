@@ -91,11 +91,21 @@ class XenoCantoRecordingLeanSchema(BaseModel):
 
   @computed_field
   def license(self) -> Optional[str]:
-    if self.license_url:
-      match = license_pattern.search(str(self.license_url))
-      if match:
-        d = match.groupdict()
-        return f'{d.get("license")},{d.get("version")}'
+    if not self.license_url:
+      return None
+
+    match = license_pattern.search(str(self.license_url))
+    if match:
+      parts = match.groupdict()
+      lic_name = parts['name']
+      version = parts['ver']
+
+      # Normalization: xeno-canto uses 'zero' in the URL for CC0
+      if lic_name == 'zero':
+        lic_name = 'cc0'
+
+      return f'{lic_name},{version}'
+
     return None
 
 

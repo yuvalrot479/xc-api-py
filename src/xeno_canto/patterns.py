@@ -1,7 +1,7 @@
 import re
 
 
-license_pattern = re.compile(r'/licenses/(?P<license>[a-z-]+)/(?P<version>\d+\.\d+)/')
+license_pattern = re.compile(r'/(?P<path>licenses|publicdomain)/(?P<name>[a-z0-9-]+)/(?P<ver>\d+\.\d+)')
 float_pattern = re.compile(r'([-+]?\d*\.?\d+)')
 xc_upload_url_pattern = re.compile(
   (

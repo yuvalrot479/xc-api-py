@@ -58,13 +58,23 @@ class XenoCantoRecordingLean:
     return self.genus + ' ' + self.epithet
 
   @property
-  def license(self) -> str:
-    if match := license_pattern.search(str(self.license_url)):
-      d = match.groupdict()
-      lic = d.get('license')
-      ver = d.get('version')
-      return f'{lic},{ver}'
-    raise ValueError()
+  def license(self) -> Optional[str]:
+    if not self.license_url:
+      return None
+
+    match = license_pattern.search(str(self.license_url))
+    if match:
+      parts = match.groupdict()
+      lic_name = parts['name']
+      version = parts['ver']
+
+      # Normalization: xeno-canto uses 'zero' in the URL for CC0
+      if lic_name == 'zero':
+        lic_name = 'cc0'
+
+      return f'{lic_name},{version}'
+
+    return None
 
 
 @dataclass
