@@ -47,7 +47,7 @@ from .fields.geo.geo import (
   AltitudeField,
   TempField,
 )
-from ...dtos.coordinates import Coordinates
+from ...coordinates import Coordinates
 from ...patterns import license_pattern
 
 

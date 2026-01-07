@@ -193,8 +193,12 @@ def validate_dt_timedelta(v):
     return v
 
   elif isinstance(v, str):
-    dt = dtparser.parse(v)
-    return datetime.timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
+    try:
+      mm, ss = map(int, v.split(':'))
+      return datetime.timedelta(minutes=mm, seconds=ss)
+
+    except (ValueError, IndexError):
+      raise ValueError(v) from None
 
   raise ValueError(v)
 

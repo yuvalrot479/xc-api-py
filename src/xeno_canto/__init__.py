@@ -3,5 +3,6 @@
 __version__ = '0.1.0'
 
 from .client.client import Client
+from . import tags
 
-__all__ = ['Client']
+__all__ = ['Client', 'tags']

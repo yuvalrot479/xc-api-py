@@ -1,4 +1,4 @@
-from .fields.recording.metadata import (
+from .fields import (
   IdField,
   RecordistField,
   QualityField,
@@ -7,37 +7,25 @@ from .fields.recording.metadata import (
   DeviceField,
   MicrophoneField,
   SampleRateField,
-)
-from .fields.recording.recording import (
   PlaybackField,
   MethodField,
   SinceField,
   AutomaticField,
-)
-from .fields.recording.resources import (
   LicenseField,
-)
-from .fields.bio.taxonomy import (
   GroupField,
   GenusField,
   EpithetField,
   SubspeciesField,
-)
-from .fields.bio.bio import (
   SoundTypeField,
   SexField,
   LifeStageField,
   BackgroundField,
   SeenField,
   RegistrationField,
-)
-from .fields.geo.geo import (
   CountryField,
   LocalityField,
-  LatitudeField,
-  LongitudeField,
   AreaField,
-  TempField,
+  BoxField,
 )
 
 
@@ -58,8 +46,6 @@ class XenoCantoQuerySchema(BaseModel):
   remarks: RemarksField
   seen: SeenField
   playback: PlaybackField
-  latitude: LatitudeField
-  longitude: LongitudeField
   background: BackgroundField
   sound_type: SoundTypeField
   sex: SexField
@@ -75,9 +61,9 @@ class XenoCantoQuerySchema(BaseModel):
   month: Optional[int] = None
   colyear: Optional[int] = None
   colmonth: Optional[int] = None
-  temp: TempField
   registration: RegistrationField
   automatic: AutomaticField
   device: DeviceField
   microphone: MicrophoneField
   sample_rate: SampleRateField
+  box: BoxField

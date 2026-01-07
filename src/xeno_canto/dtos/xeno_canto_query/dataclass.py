@@ -5,25 +5,21 @@ from ...types import (
   LifeStage,
   RecordingMethod,
 )
-from ...tags.geo import (
-  TempTag,
-  CountryTag,
-  LatitudeTag,
-  LongitudeTag,
-)
-from ...tags.meta import (
+from ...tags import (
   LengthTag,
   QualityTag,
-  RecordingNumberTag,
   SinceTag,
   SampleRateTag,
+  CountryTag,
+  BoxTag,
 )
 
-from typing import TypedDict, Union, List
+from typing import TypedDict, Union, List, Tuple
 import datetime
 
 
 class XenoCantoQuery(TypedDict, total=False):
+  box: Union[BoxTag, Tuple[float, float, float, float]]
   genus: str
   epithet: str
   subspecies: str
@@ -35,14 +31,12 @@ class XenoCantoQuery(TypedDict, total=False):
   remarks: str
   seen: bool
   playback: bool
-  latitude: Union[LatitudeTag, float]
-  longitude: Union[LongitudeTag, float]
   background: List[str]
   sound_type: SoundType
   sex: Sex
   life_stage: LifeStage
   method: RecordingMethod
-  xc_number: Union[RecordingNumberTag, int]
+  xc_number: int
   license: str  # FIXME
   quality: Union[QualityTag, str]
   length: Union[LengthTag, str]
@@ -52,7 +46,6 @@ class XenoCantoQuery(TypedDict, total=False):
   month: int
   colyear: int
   colmonth: int
-  temp: Union[TempTag, str, float]
   registration: str
   automatic: bool
   device: str

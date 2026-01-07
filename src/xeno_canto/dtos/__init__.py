@@ -5,4 +5,4 @@ from .xeno_canto_recording.dataclass import XenoCantoRecording, XenoCantoRecordi
 from .xeno_canto_recording.schema import XenoCantoRecordingSchema, XenoCantoRecordingLeanSchema
 from .xeno_canto_response.schema import XenoCantoResponseSchema
 from .search_query_params import SearchQueryParams
-from .coordinates import Coordinates
+from ..coordinates import Coordinates

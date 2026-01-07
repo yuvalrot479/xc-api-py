@@ -1,4 +1,4 @@
-from ...dtos.coordinates import Coordinates
+from ...coordinates import Coordinates
 from ...patterns import license_pattern
 from ...types import (
   SoundType,
@@ -36,7 +36,7 @@ class XenoCantoRecordingLean:
   page: yarl.URL
   license_url: yarl.URL
   upload_date: datetime.date
-  length: float
+  length: datetime.timedelta
   quality: str
 
   sonograms: dict[str, yarl.URL]
