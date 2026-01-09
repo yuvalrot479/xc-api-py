@@ -3,6 +3,15 @@
 __version__ = '0.1.0'
 
 from .client.client import Client
-from . import tags
+from .tags import tags
+from .recording.recording import (
+  XenoCantoRecording,
+  XenoCantoRecordingLean,
+)
 
-__all__ = ['Client', 'tags']
+__all__ = [
+  'Client',
+  'tags',
+  'XenoCantoRecording',
+  'XenoCantoRecordingLean',
+]

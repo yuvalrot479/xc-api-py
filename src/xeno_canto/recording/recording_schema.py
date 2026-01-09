@@ -1,45 +1,35 @@
-from .fields.recording.metadata import (
-  XcNumberField,
+from xeno_canto.recording.recording_fields import (
+  CatalogueNumberField,
   RecordistField,
-  XcQualityField,
+  QualityField,
   RemarksField,
   LengthField,
   UploadDateField,
   DeviceField,
   MicrophoneField,
   SampleRateField,
-)
-from .fields.recording.recording import (
   PlaybackField,
   MethodField,
   AutomaticField,
   RecordedDateField,
   RecordedTimeField,
-)
-from .fields.recording.resources import (
   SonogramsField,
   OscillogramsField,
   LicenseUrlField,
   XcPageField,
   FileDownloadField,
   FileNameField,
-)
-from .fields.bio.taxonomy import (
   GroupField,
   GenusField,
   EpithetField,
   SubspeciesField,
   CommonNameField,
-)
-from .fields.bio.bio import (
   SoundTypeField,
   SexField,
   LifeStageField,
   BackgroundField,
   SeenField,
   RegistrationField,
-)
-from .fields.geo.geo import (
   CountryField,
   LocalityField,
   LatitudeField,
@@ -47,8 +37,7 @@ from .fields.geo.geo import (
   AltitudeField,
   TempField,
 )
-from ...coordinates import Coordinates
-from ...patterns import license_pattern
+from xeno_canto.patterns import license_pattern
 
 
 from pydantic import BaseModel, ConfigDict, computed_field
@@ -60,7 +49,7 @@ class XenoCantoRecordingLeanSchema(BaseModel):
     arbitrary_types_allowed=True,
     populate_by_name=True,  # Essential for XC API tag mapping
   )
-  number: XcNumberField
+  number: CatalogueNumberField
   genus: GenusField
   epithet: EpithetField
   common_name: CommonNameField
@@ -72,7 +61,7 @@ class XenoCantoRecordingLeanSchema(BaseModel):
   license_url: LicenseUrlField
   upload_date: UploadDateField
   length: LengthField
-  quality: XcQualityField
+  quality: QualityField
 
   sonograms: SonogramsField
   oscillograms: OscillogramsField
@@ -82,12 +71,6 @@ class XenoCantoRecordingLeanSchema(BaseModel):
     if self.number:
       return self.number
     raise ValueError()
-
-  @computed_field
-  def binomial(self) -> str:
-    if self.genus and self.epithet:
-      return f'{self.genus} {self.epithet}'
-    return 'Unknown species'
 
   @computed_field
   def license(self) -> Optional[str]:
@@ -132,13 +115,3 @@ class XenoCantoRecordingSchema(XenoCantoRecordingLeanSchema):
   device: DeviceField
   microphone: MicrophoneField
   sample_rate: SampleRateField
-
-  @computed_field
-  def position(self) -> Optional[Coordinates]:
-    if self.longitude is not None and self.latitude is not None:
-      return Coordinates(
-        lon=self.longitude,
-        lat=self.latitude,
-        alt=self.altitude,
-      )
-    return None

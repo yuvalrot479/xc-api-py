@@ -1,35 +1,14 @@
-from ...tags import (
-  CountryTag,
-  SinceTag,
-  BoxTag,
-  SampleRateTag,
-  QualityTag,
-  LengthTag,
-  Box,
-)
-from ...types import (
-  Sex,
-  LifeStage,
-  SoundType,
-  XcQualityRating,
-  Group,
-  Area,
-  RecordingMethod,
-)
-from ..constants import aliases
-from .serializers import (
-  serialize_country,
-  serialize_numeric_tag,
-  serialize_boolean,
-  serialize_datetime_date,
-  serialize_box,
-)
+from xeno_canto.tags import tags
+from xeno_canto import types as T
+from xeno_canto.constants import aliases
+from xeno_canto.query import field_serializers as fs
 
 from typing import (
   Annotated,
   Optional,
   Union,
   List,
+  Tuple,
 )
 from pydantic import (
   Field,
@@ -39,7 +18,7 @@ import datetime
 
 
 SexField = Annotated[
-  Optional[Sex],
+  Optional[T.Sex],
   Field(
     default=None,
     title='Sex of the recorded animal',
@@ -48,7 +27,7 @@ SexField = Annotated[
 ]
 
 LifeStageField = Annotated[
-  Optional[Union[LifeStage, List[LifeStage]]],
+  Optional[Union[T.LifeStage, List[T.LifeStage]]],
   Field(
     default=None,
     title='Life stage of the recorded animal',
@@ -57,7 +36,7 @@ LifeStageField = Annotated[
 ]
 
 SoundTypeField = Annotated[
-  Optional[SoundType],
+  Optional[T.SoundType],
   Field(
     default=None,
     title='Call type of the recorded animal',
@@ -129,7 +108,7 @@ SubspeciesField = Annotated[
 ]
 
 GroupField = Annotated[
-  Optional[Group],
+  Optional[T.Group],
   Field(
     default=None,
     title='Group to which the species belongs.',
@@ -143,14 +122,14 @@ GroupField = Annotated[
 ]
 
 CountryField = Annotated[
-  Optional[Union[CountryTag, str]],
+  Optional[Union[tags.CountryTag, str]],
   Field(
     default=None,
     title='Country where the recording was made',
     serialization_alias=aliases.COUNTRY,
     examples=['Spain'],
   ),
-  PlainSerializer(serialize_country),
+  PlainSerializer(fs.serialize_country),
 ]
 
 LocalityField = Annotated[
@@ -194,7 +173,7 @@ TempField = Annotated[
 ]
 
 AreaField = Annotated[
-  Optional[Area],
+  Optional[T.Area],
   Field(
     default=None,
     description='The area tag allows you to search by world area. Valid values for this tag are africa, america, asia, australia, europe.',
@@ -236,13 +215,13 @@ DeviceField = Annotated[
 ]
 
 SampleRateField = Annotated[
-  Optional[Union[SampleRateTag, int]],
+  Optional[Union[tags.SampleRateTag, int]],
   Field(
     default=None,
     title='Sample rate of the recording',
     serialization_alias=aliases.SAMPLE_RATE,
   ),
-  PlainSerializer(serialize_numeric_tag),
+  PlainSerializer(fs.serialize_numeric_tag),
 ]
 
 RecordistField = Annotated[
@@ -267,24 +246,24 @@ RemarksField = Annotated[
 ]
 
 LengthField = Annotated[
-  Optional[Union[LengthTag, datetime.timedelta, int, str]],
+  Optional[Union[tags.LengthTag, datetime.timedelta, float, int]],
   Field(
     default=None,
     title='Length of the recording (minutes, seconds)',
     serialization_alias=aliases.LENGTH,
     examples=['4:08'],
   ),
-  PlainSerializer(serialize_numeric_tag),
+  PlainSerializer(fs.serialize_datetime_timedelta_as_seconds),
 ]
 
 QualityField = Annotated[
-  Optional[Union[QualityTag, XcQualityRating, str]],
+  Optional[Union[tags.QualityTag, T.QualityRating, str]],
   Field(
     default=None,
     title='Recording quality rating',
     serialization_alias=aliases.XC_QUALITY,
   ),
-  PlainSerializer(serialize_numeric_tag),
+  PlainSerializer(fs.serialize_quality_rating),
 ]
 
 
@@ -295,7 +274,7 @@ PlaybackField = Annotated[
     title='Playback was used to lure the animal.',
     serialization_alias=aliases.PLAYBACK_USED,
   ),
-  PlainSerializer(serialize_boolean),
+  PlainSerializer(fs.serialize_boolean),
 ]
 
 AutomaticField = Annotated[
@@ -305,11 +284,11 @@ AutomaticField = Annotated[
     title='Indicator for automatic/non-supervised recording',
     serialization_alias='auto',
   ),
-  PlainSerializer(serialize_boolean),
+  PlainSerializer(fs.serialize_boolean),
 ]
 
 SinceField = Annotated[
-  Optional[Union[SinceTag, datetime.date, str, int]],
+  Optional[Union[tags.SinceTag, datetime.date, str, int]],
   Field(
     default=None,
     title='Upload date filter',
@@ -322,11 +301,11 @@ SinceField = Annotated[
     serialization_alias=aliases.SINCE,
     examples=['2021-12-23'],
   ),
-  PlainSerializer(serialize_datetime_date),
+  PlainSerializer(fs.serialize_datetime_date),
 ]
 
 MethodField = Annotated[
-  Optional[RecordingMethod],
+  Optional[T.RecordingMethod],
   Field(
     default=None,
     title='Method of the recording',
@@ -352,7 +331,7 @@ LicenseField = Annotated[
 ]
 
 BoxField = Annotated[
-  Optional[Union[BoxTag, Box]],
+  Optional[Union[tags.BoxTag, Tuple[float, float, float, float]]],
   Field(
     default=None,
     description="""
@@ -363,5 +342,5 @@ BoxField = Annotated[
     """,
     serialization_alias=aliases.BOX,
   ),
-  PlainSerializer(serialize_box),
+  PlainSerializer(fs.serialize_box),
 ]

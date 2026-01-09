@@ -10,26 +10,24 @@ dependencies = [
   "numpy>=2.3.5",
   "requests>=2.32.5",
   "requests-ratelimiter>=0.7.0",
+  "scipy>=1.16.3",
 ]
 description = "An intuitive, type-safe Python wrapper for the Xeno-Canto API"
 license = {text = "MIT"}
 name = "xc-api-py"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.1.21"
-
-[tool.pdm]
-distribution = true
-src-paths = ["src"]
+version = "0.1.22"
 
 [dependency-groups]
 dev = [
-  "pytest>=9.0.1",
-  "python-dotenv>=1.2.1",
-  "rich>=14.2.0",
-  "pandas>=2.3.3",
-  "sounddevice>=0.5.3",
-  "requests-mock>=1.12.1",
+    "pytest>=9.0.1",
+    "python-dotenv>=1.2.1",
+    "rich>=14.2.0",
+    "pandas>=2.3.3",
+    "sounddevice>=0.5.3",
+    "requests-mock>=1.12.1",
+    "matplotlib>=3.10.8",
 ]
 
 [project.urls]
@@ -46,3 +44,8 @@ target-version = "py311"
 [tool.ruff.format]
 indent-style = "space"
 quote-style = "single"
+
+[tool.pdm]
+distribution = true
+src-paths = ["src"]
+

@@ -1,13 +1,36 @@
 from typing import Literal
-from enum import IntEnum
+from enum import IntEnum, auto
+from typing import (
+  Union,
+)
 
 
-class XcQualityRating(IntEnum):
-  A = 1  # Best
-  B = 2
-  C = 3
-  D = 4
-  E = 5  # Worst
+class QualityRating(IntEnum):
+  A = auto()
+  B = auto()
+  C = auto()
+  D = auto()
+  E = auto()
+
+  @classmethod
+  def max(cls) -> 'QualityRating':
+    return QualityRating(min(c.value for c in cls))
+
+  @classmethod
+  def min(cls) -> 'QualityRating':
+    return QualityRating(max(c.value for c in cls))
+
+  def __add__(self, other):
+    if isinstance(other, int):
+      new_value = max(self.value - other, self.max())
+      return QualityRating(new_value)
+    return NotImplemented
+
+  def __sub__(self, other):
+    if isinstance(other, int):
+      new_value = min(self.value + other, self.min())
+      return QualityRating(new_value)
+    return NotImplemented
 
 
 Area = Literal[
@@ -84,3 +107,6 @@ SoundType = Literal[
   'subsong',
   'territorial call',
 ]
+
+
+RecordingId = Union[str, int]

@@ -1,5 +1,5 @@
-from ....types import XcQualityRating
-from ....patterns import float_pattern, partial_date_pattern
+from xeno_canto.types import QualityRating
+from xeno_canto.patterns import float_pattern, partial_date_pattern
 
 from functools import wraps
 from typing import (
@@ -230,11 +230,11 @@ def validate_xc_number(v):
 
 
 def validate_xc_quality(v):
-  if isinstance(v, XcQualityRating):
+  if isinstance(v, QualityRating):
     return v
 
   if isinstance(v, str):
-    return XcQualityRating[v.capitalize()]
+    return QualityRating[v.capitalize()]
 
   raise ValueError(v)
 

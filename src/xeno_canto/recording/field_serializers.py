@@ -1,4 +1,4 @@
-from ....types import XcQualityRating
+from xeno_canto.types import QualityRating
 
 import yarl
 import datetime
@@ -11,7 +11,7 @@ def serialize_url(v):
 
 
 def serialize_quality_rating(v):
-  if isinstance(v, XcQualityRating):
+  if isinstance(v, QualityRating):
     return v.name
   return v
 

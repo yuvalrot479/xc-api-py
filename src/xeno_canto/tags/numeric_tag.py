@@ -1,5 +1,5 @@
 from .search_tag import SearchTag
-from .types import Numeric, Contraint
+from .tag_types import Numeric, Contraint
 
 from typing import Optional
 

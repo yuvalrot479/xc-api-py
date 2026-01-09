@@ -1,6 +1,5 @@
-from ...coordinates import Coordinates
-from ...patterns import license_pattern
-from ...types import (
+from xeno_canto.patterns import license_pattern
+from xeno_canto.types import (
   SoundType,
   Sex,
   LifeStage,
@@ -17,13 +16,14 @@ from typing import (
   List,
   Union,
 )
+from functools import cached_property
 import yarl
 import pydantic
 import pathlib
 import datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class XenoCantoRecordingLean:
   number: int
   genus: str
@@ -31,7 +31,7 @@ class XenoCantoRecordingLean:
   common_name: str
   recordist: str
   country: str
-  file_name: pathlib.Path
+  file_name: str
   file_download: yarl.URL
   page: yarl.URL
   license_url: yarl.URL
@@ -53,11 +53,7 @@ class XenoCantoRecordingLean:
   def id(self) -> int:
     return self.number
 
-  @property
-  def binomial(self) -> str:
-    return self.genus + ' ' + self.epithet
-
-  @property
+  @cached_property
   def license(self) -> Optional[str]:
     if not self.license_url:
       return None
@@ -77,37 +73,27 @@ class XenoCantoRecordingLean:
     return None
 
 
-@dataclass
+@dataclass(frozen=True)
 class XenoCantoRecording(XenoCantoRecordingLean):
-  date: Optional[datetime.date] = None
-  group: Optional[str] = None
-  subspecies: Optional[str] = None
-  locality: Optional[str] = None
+  date: Optional[datetime.date] = field(default=None)
+  group: Optional[str] = field(default=None)
+  subspecies: Optional[str] = field(default=None)
+  locality: Optional[str] = field(default=None)
   sound_type: List[SoundType] = field(default_factory=list)
-  sex: Optional[Sex] = None
+  sex: Optional[Sex] = field(default=None)
   life_stage: List[LifeStage] = field(default_factory=list)
-  seen: Optional[bool] = None
-  playback: Optional[bool] = None
+  seen: Optional[bool] = field(default=None)
+  playback: Optional[bool] = field(default=None)
   background: List[str] = field(default_factory=list)
-  latitude: Optional[float] = None
-  longitude: Optional[float] = None
-  altitude: Optional[float] = None
-  method: Optional[RecordingMethod] = None
-  time: Optional[datetime.time] = None
-  remarks: Optional[str] = None
-  temp: Optional[float] = None
-  registration: Optional[Union[int, str]] = None  # Often contains strings in XC
-  automatic: Optional[bool] = None
-  device: Optional[str] = None
-  microphone: Optional[str] = None
-  sample_rate: Optional[int] = None
-
-  @property
-  def position(self) -> Optional[Coordinates]:
-    if self.longitude is not None and self.latitude is not None:
-      return Coordinates(
-        lon=self.longitude,
-        lat=self.latitude,
-        alt=self.altitude,
-      )
-    return None
+  latitude: Optional[float] = field(default=None)
+  longitude: Optional[float] = field(default=None)
+  altitude: Optional[float] = field(default=None)
+  method: Optional[RecordingMethod] = field(default=None)
+  time: Optional[datetime.time] = field(default=None)
+  remarks: Optional[str] = field(default=None)
+  temp: Optional[float] = field(default=None)
+  registration: Optional[Union[int, str]] = field(default=None)  # Often contains strings in XC
+  automatic: Optional[bool] = field(default=None)
+  device: Optional[str] = field(default=None)
+  microphone: Optional[str] = field(default=None)
+  sample_rate: Optional[int] = field(default=None)

@@ -1,7 +1,13 @@
-from ..types import XcQualityRating
-from .search_tag import SearchTag
-from .numeric_tag import NumericTag, NumericRangeTag
-from .types import Numeric, Contraint, Box
+from xeno_canto.types import QualityRating
+from xeno_canto.tags.search_tag import SearchTag
+from xeno_canto.tags.numeric_tag import (
+  NumericTag,
+  NumericRangeTag,
+)
+from xeno_canto.tags.tag_types import (
+  Numeric,
+  Contraint,
+)
 
 from typing import (
   Union,
@@ -13,7 +19,6 @@ from typing import (
 import datetime
 import pycountry
 from pycountry.db import Country
-from ..coordinates import Coordinates
 
 
 class CountryTag(SearchTag):
@@ -32,35 +37,22 @@ class CountryTag(SearchTag):
 
 
 class BoxTag(SearchTag):
-  @overload
-  def __init__(self, box: Box): ...
+  ay: float
+  ax: float
+  by: float
+  bx: float
 
   @overload
-  def __init__(self, west: Tuple[float, float], east: Tuple[float, float]): ...
-
-  @overload
-  def __init__(self, west: Coordinates, east: Coordinates): ...
+  def __init__(self, sw: Tuple[float, float], ne: Tuple[float, float]): ...
 
   @overload
   def __init__(self, lat_min: float, lon_min: float, lat_max: float, lon_max: float): ...
 
   def __init__(self, *args: Any):  # type: ignore
-    if len(args) == 1:
-      # Case 1: Box object
-      box = args[0]
-      self.ay, self.ax = box[0], box[1]
-      self.by, self.bx = box[2], box[3]
-
-    elif len(args) == 2 and all(isinstance(arg, Coordinates) for arg in args):
-      # Case 2: Two Coordinate objects (West and East)
-      west, east = args
-      self.ay, self.ax = west.lat, west.lon
-      self.by, self.bx = east.lat, east.lon
-
-    elif len(args) == 2 and all(isinstance(arg, tuple) for arg in args):
-      west, east = args
-      self.ay, self.ax = west
-      self.by, self.bx = east
+    if len(args) == 2:
+      sw, ne = args
+      self.ay, self.ax = sw
+      self.by, self.bx = ne
 
     elif len(args) == 4:
       self.ay, self.ax, self.by, self.bx = args
@@ -76,33 +68,23 @@ class SampleRateTag(NumericTag): ...
 
 
 class QualityTag(NumericRangeTag):
-  def assign(self, f: str, v: Union[str, int]):
-    try:
-      if isinstance(v, str):
-        self.a = XcQualityRating[v.capitalize()]
-      else:
-        self.a = XcQualityRating(v)
-      setattr(self, f, v)
-
-    except ValueError:
-      values = ', '.join([f'"{r.name}"' for r in XcQualityRating])
-      raise ValueError(
-        (
-          f'Invalid quality "{v}";',
-          'Pass one of the following (case-insensitive): ',
-          values,
-        )
-      )
-
   def __init__(
     self,
     a: Union[str, int],
     b: Optional[Union[str, int]] = None,
     constraint: Optional[Contraint] = None,
   ):
-    self.assign('a', a)
+    if isinstance(a, str):
+      self.a = QualityRating[a.capitalize()]
+    else:
+      self.a = QualityRating(a)
+
     if b is not None:
-      self.assign('b', b)
+      if isinstance(b, str):
+        self.b = QualityRating[b.capitalize()]
+      else:
+        self.b = QualityRating(b)
+
     self.constraint = constraint
 
   @classmethod
@@ -111,11 +93,11 @@ class QualityTag(NumericRangeTag):
 
   @classmethod
   def at_least(cls, v: Union[str, int]):
-    return cls(v, constraint='at least')  # f'">{value}"'
+    return cls(v, constraint='at least')
 
   @classmethod
   def at_most(cls, v: Union[str, int]):
-    return cls(v, constraint='at most')  # f'"<{value}"'
+    return cls(v, constraint='at most')
 
 
 class SinceTag(SearchTag):

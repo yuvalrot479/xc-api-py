@@ -1,22 +1,30 @@
-from ..dtos import (
+from xeno_canto.recording.recording_schema import (
   XenoCantoRecordingSchema,
+  XenoCantoRecordingLeanSchema,
+)
+from xeno_canto.recording.recording import (
   XenoCantoRecording,
   XenoCantoRecordingLean,
-  XenoCantoRecordingLeanSchema,
-  XenoCantoQuerySchema,
-  XenoCantoAudio,
-  XenoCantoResponseSchema,
-  SearchQueryParams,
 )
-from .errors import (
+from xeno_canto.query.query_schema import (
+  XenoCantoQuerySchema,
+)
+from xeno_canto.client.client_errors import (
   ClientError,
   ServerError,
 )
-from .types import (
-  Query,
-  Record,
-  RecordingId,
+from xeno_canto.client.client_schemas import (
+  XenoCantoResponseSchema,
+)
+from xeno_canto.client.client_params import (
+  SearchQueryParams,
+)
+from xeno_canto import types as T
+from xeno_canto.client.client_types import (
   ReturnMode,
+  XenoCantoRecord,
+  AnyRecord,
+  Query,
 )
 
 from typing import (
@@ -38,6 +46,9 @@ import random
 from requests_ratelimiter import LimiterSession, Session
 from pathlib import Path
 from datetime import datetime
+from pydantic import (
+  SecretStr,
+)
 
 
 class Client:
@@ -52,14 +63,14 @@ class Client:
 
   def __init__(
     self,
-    api_key: str,
+    api_key: Union[SecretStr, str],
     verbose: bool = False,
     _page_size: int = 500,
     _per_second: int = 4,
     _burst: int = 10,
     _max_workers: int = min(4, cpu_count() or 1),
   ):
-    self._api_key = api_key
+    self._api_key = api_key.get_secret_value() if isinstance(api_key, SecretStr) else api_key
     self._verbose = verbose
     self._recording_session = LimiterSession(per_second=_per_second, burst=_burst)
     self._recording_session.headers.update({'User-Agent': 'XC-Python-Client/1.0'})
@@ -167,7 +178,7 @@ class Client:
       current_page += 1
 
   @classmethod
-  def _sanitize_rid(cls, rid: RecordingId) -> int:
+  def _sanitize_rid(cls, rid: T.RecordingId) -> int:
     if isinstance(rid, str):
       rid = re.sub(r'^xc', '', rid.strip(), flags=re.IGNORECASE)
 
@@ -179,7 +190,7 @@ class Client:
     return clean_int
 
   @classmethod
-  def _sift_rid_list(cls, rids: List[RecordingId]) -> Tuple[Set[int], Set[Any]]:
+  def _sift_rid_list(cls, rids: List[T.RecordingId]) -> Tuple[Set[int], Set[Any]]:
     cleaned: Set[int] = set()
     malformed: Set[Any] = set()
 
@@ -287,46 +298,28 @@ class Client:
     resp.raise_for_status()
     return resp.content
 
-  def _map(self, rs: Iterable[XenoCantoRecordingSchema], mode: ReturnMode, lean: bool = False) -> Iterator[Record]:
+  def _map(self, rs: Iterable[XenoCantoRecordingSchema], mode: ReturnMode, lean: bool = False) -> Iterator[AnyRecord]:
     match (mode, lean):
       case ('dataclass', True):
         yield from (XenoCantoRecordingLean.from_pydantic(r) for r in rs)
       case ('dataclass', False):
         yield from (XenoCantoRecording.from_pydantic(r) for r in rs)
 
-      case ('pydantic', True):
-        yield from (XenoCantoRecordingLeanSchema.model_validate(r) for r in rs)
-      case ('pydantic', False):
-        yield from rs
-
       case ('dict', True):
         yield from (r.model_dump(mode='python', include=self._LEAN_FIELDS) for r in rs)
       case ('dict', False):
         yield from (r.model_dump(mode='python') for r in rs)
-
-      case ('audio', _):
-        yield from (XenoCantoAudio.from_record(r, self._download_promise) for r in rs)  # type: ignore
-
-      case ('json', _):
-        yield from (r.model_dump_json() for r in rs)
 
       case _:
         raise ValueError(mode)
 
   ###################### Public API
 
-  def search(self, **kwargs: Unpack[SearchQueryParams]) -> Union[Iterator[Record], List[Record]]:
-    limit = kwargs.pop('limit', None)
+  def search(self, **kwargs: Unpack[SearchQueryParams]) -> Union[Iterator[AnyRecord], List[AnyRecord]]:
+    limit = kwargs.pop('limit', 500)
     mode = kwargs.pop('mode', 'dataclass')
     lean = kwargs.pop('lean', False)
     stream = kwargs.pop('stream', False)
-    binomial = kwargs.pop('binomial', None)
-    species_list = kwargs.pop('species_list', [])  # TODO Implement
-
-    if binomial:
-      genus, epithet = binomial.split(' ')
-      kwargs['genus'] = genus.lower()
-      kwargs['epithet'] = epithet.lower()
 
     query = XenoCantoQuerySchema.model_validate(kwargs)
 
@@ -338,11 +331,11 @@ class Client:
 
   def search_ids(
     self,
-    rids: List[RecordingId],
+    rids: List[T.RecordingId],
     mode: ReturnMode = 'dataclass',
     lean: bool = False,
     stream: bool = False,
-  ) -> Union[Iterator[Record], List[Record]]:
+  ) -> Union[Iterator[AnyRecord], List[AnyRecord]]:
     ok_ids, malformed = self._sift_rid_list(rids)
 
     if malformed and self._verbose:
@@ -390,7 +383,7 @@ class Client:
     mode: ReturnMode = 'dataclass',
     lean: bool = False,
     stream: bool = False,
-  ) -> Union[Iterator[Record], List[Record]]:
+  ) -> Union[Iterator[AnyRecord], List[AnyRecord]]:
     self._sanitize_rid(start)
     self._sanitize_rid(stop)
 
@@ -429,13 +422,13 @@ class Client:
 
     return results
 
-  def get_by_id(self, rid: RecordingId, mode: ReturnMode = 'dataclass', lean: bool = False) -> Optional[Record]:
+  def get_by_id(self, rid: T.RecordingId, mode: ReturnMode = 'dataclass', lean: bool = False) -> Optional[AnyRecord]:
     srid = self._sanitize_rid(rid)
 
     if r := self._fetch_one_by_id(srid):
       return list(self._map([r], mode, lean)).pop(0)
 
-  def sample(self, k: int, mode: ReturnMode = 'dataclass', lean: bool = False) -> List[Record]:
+  def sample(self, k: int, mode: ReturnMode = 'dataclass', lean: bool = False) -> List[AnyRecord]:
     if not 1 <= k <= 500:
       raise ValueError(k)
     rs = self._sample(k)
@@ -445,55 +438,53 @@ class Client:
 
   def download(
     self,
-    recordings: Union[List[Record], Iterator[Record], List[int]],
+    recordings: Union[List[XenoCantoRecord], Iterator[XenoCantoRecord], List[int]],
     target_dir: Optional[Union[str, Path]] = None,
     grouping: Literal['flat', 'species', 'recordist'] = 'flat',
     naming: Literal['original', 'catalogue'] = 'original',
-    formatting: Literal['original', 'wav'] = 'original',
+    replace_ws: bool = False,
+    sep: str = '-',
   ):
-    recordings = list(recordings)  # type: ignore
+    rs_list: Union[List[XenoCantoRecord], List[int]] = list(recordings)
+    rs: List[XenoCantoRecord] = []
 
     if not recordings:
       return
 
-    if isinstance(recordings[0], int):  # type: ignore
-      fetched = self._search_id_scattered(recordings)  # type: ignore
-      recordings = [r for _, r in fetched if r is not None]
+    if isinstance(rs_list[0], int):
+      fetched = self._search_id_scattered(rs_list)  # type: ignore
+      rs = [r for _, r in fetched if r is not None]
 
-    audios = [XenoCantoAudio.from_record(r, self._download_promise) for r in recordings]  # type: ignore
+    else:
+      rs = rs_list
 
     if target_dir is None:
       # Generate safe timestamp: 2026-01-02T13-57-53
       timestamp = datetime.now().isoformat(timespec='seconds').replace(':', '-')
-      root_path = Path.cwd() / f'xc-recordings-{timestamp}'
+      master_dir = Path.cwd() / f'xc-recordings-{timestamp}'
     else:
-      root_path = Path(target_dir)
+      master_dir = Path(target_dir)
 
-    root_path.mkdir(parents=True, exist_ok=True)
+    master_dir.mkdir(parents=True, exist_ok=True)
 
-    for a in audios:
-      current_target = root_path
+    for r in rs:
+      if grouping == 'species':
+        to_dir = master_dir / (r.genus + sep + r.epithet).lower()
 
-      if grouping != 'flat':
-        attr_name = 'binomial' if grouping == 'species' else 'recordist'
-        primary_val = getattr(a, attr_name, 'unknown') or 'unknown'
+      elif grouping == 'recordist':
+        if r.recordist is not None:
+          to_dir = master_dir / r.recordist.lower()
+        else:
+          to_dir = master_dir / 'unknown'
 
-        primary_dir = str(primary_val).strip().lower().replace(' ', '-')
-        primary_dir = re.sub(r'[<>:"/\\|?*]', '_', primary_dir)
-        current_target = current_target / primary_dir
+      else:
+        to_dir = master_dir
 
-        if grouping == 'species' and getattr(a, 'subspecies', None):
-          sub_val = str(a.subspecies).strip().lower().replace(' ', '-')
-          sub_dir = re.sub(r'[<>:"/\\|?*]', '_', sub_val)
-          current_target = current_target / sub_dir
+      to_dir.mkdir(exist_ok=True)
 
-        current_target.mkdir(parents=True, exist_ok=True)
+      path = to_dir / r.file_name
 
       if naming == 'catalogue':
-        # Preserve original extension but rename stem
-        ext = Path(a.name).suffix if a.name else '.mp3'
-        safe_filename = f'xc{a.number}{ext}'
-      else:
-        safe_filename = re.sub(r'[<>:"/\\|?*]', '_', a.name or f'xc{a.number}')
+        path = path.with_stem(str(r.number))
 
-      a.save(current_target, name=safe_filename)
+      path.write_bytes(r.f)

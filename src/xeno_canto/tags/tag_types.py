@@ -21,6 +21,4 @@ Area = Literal[
   'europe',
 ]
 
-Box = Tuple[float, float, float, float]
-
 Numeric = Union[float, int, datetime.timedelta]
