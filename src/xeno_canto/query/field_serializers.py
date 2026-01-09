@@ -70,12 +70,6 @@ MIN_Q = QualityRating.min()
 
 
 def serialize_quality_rating(v):
-  print(f'Type of v: {type(v)}')
-  print(f'Path of v: {type(v).__module__}')
-  print(f'Type expected: {tags.QualityTag}')
-  print(f'Path expected: {tags.QualityTag.__module__}')
-  print(f'Direct Comparison: {type(v) is tags.QualityTag}')
-
   if isinstance(v, str):
     return v
 

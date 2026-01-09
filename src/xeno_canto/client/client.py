@@ -26,6 +26,10 @@ from xeno_canto.client.client_types import (
   AnyRecord,
   Query,
 )
+from xeno_canto.client.client_http import (
+  get_session,
+  get_cached_limiter_session,
+)
 
 from typing import (
   Optional,
@@ -43,12 +47,12 @@ import warnings
 import re
 from os import cpu_count
 import random
-from requests_ratelimiter import LimiterSession, Session
 from pathlib import Path
 from datetime import datetime
 from pydantic import (
   SecretStr,
 )
+from datetime import timedelta
 
 
 class Client:
@@ -60,24 +64,25 @@ class Client:
   _XC_MAX_ID = 950000
   _LEAN_FIELDS = set(XenoCantoRecordingLeanSchema.model_fields.keys())
   _SEARCH_LIMIT = 10000
+  _USER_AGENT = 'Xeno-Canto-Client-py/1.0'
+  _CACHE_NAME = '.xeno_cento_cache'
 
   def __init__(
     self,
     api_key: Union[SecretStr, str],
     verbose: bool = False,
-    _page_size: int = 500,
-    _per_second: int = 4,
-    _burst: int = 10,
-    _max_workers: int = min(4, cpu_count() or 1),
   ):
     self._api_key = api_key.get_secret_value() if isinstance(api_key, SecretStr) else api_key
     self._verbose = verbose
-    self._recording_session = LimiterSession(per_second=_per_second, burst=_burst)
-    self._recording_session.headers.update({'User-Agent': 'XC-Python-Client/1.0'})
-    self._download_session = Session()
-    self._download_session.headers.update({'User-Agent': 'XC-Python-Client/1.0'})
-    self._page_size = _page_size
-    self._max_workers = _max_workers
+    self._download_session = get_session(user_agent=self._USER_AGENT)
+    self._recording_session = get_cached_limiter_session(
+      per_second=4,
+      burst=10,
+      ttl=timedelta(days=1),
+      user_agent=self._USER_AGENT,
+      cache_name=self._CACHE_NAME,
+    )
+    self._max_workers = min(4, cpu_count() or 1)
 
   def _prepare_url(self, query: Query):
     if isinstance(query, XenoCantoQuerySchema):
@@ -90,7 +95,7 @@ class Client:
 
     params = dict(
       key=self._api_key,
-      per_page=self._page_size,
+      per_page=self._XC_MAX_PAGE_SIZE,
       query=query_string,
     )
 
@@ -225,7 +230,7 @@ class Client:
     start: int,
     end: int,
   ) -> Iterator[Tuple[int, Optional[XenoCantoRecordingSchema]]]:
-    batch_size = self._page_size
+    batch_size = self._XC_MAX_PAGE_SIZE
 
     for i in range(start, end + 1, batch_size):
       j = min(i + batch_size - 1, end)
@@ -320,6 +325,7 @@ class Client:
     mode = kwargs.pop('mode', 'dataclass')
     lean = kwargs.pop('lean', False)
     stream = kwargs.pop('stream', False)
+    cached = kwargs.pop('cached', False)
 
     query = XenoCantoQuerySchema.model_validate(kwargs)
 

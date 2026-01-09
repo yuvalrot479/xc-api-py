@@ -13,3 +13,6 @@ build/
 *.egg
 .xc_cache/
 xc-recordings*
+*.xeno_canto_cache*
+.xeno_cento_cache
+.xeno_cento_cache.sqlite
